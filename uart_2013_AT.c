@@ -1,17 +1,17 @@
-#include	"prio_II.h"
+#include    "prio_II.h"
 #include        "uart_2013_AT.h"
 
-extern  INT8U	uartTxBuf[UART_ARG_1_LEN];			// 定义串口发送缓冲区
-extern  INT8U	uart_path[36];
+extern  INT8U   uartTxBuf[UART_ARG_1_LEN];          // 定义串口发送缓冲区
+extern  INT8U   uart_path[36];
 extern  INT8U   tempBuf22[256];
 extern  INT8U   backMeter;
 extern INT16U TskOptimizeLimitTime;
 extern INT8U        gFlgUrtCmpFile;                         // 档案同步流程标志
 extern INT8U        FlagNew;                                                    // 上报标志位，用于激活主动注册
 
-INT16U      xb_Capacity         ( INT16U pN );
-INT8U	AT_Save_Last_Cmd_Buf[LEN_RF], AT_Save_Last_Cmd_Buf_Len = 0;
-INT8U	AT_IPR_info = 3;
+INT16U      xb_Capacity( INT16U pN );
+INT8U   AT_Save_Last_Cmd_Buf[LEN_RF], AT_Save_Last_Cmd_Buf_Len = 0;
+INT8U   AT_IPR_info = 2;
 
 
 
@@ -32,12 +32,13 @@ INT64U time_total_from_1970 = 0;
 * @author       李晋南
 * @date       2018/01/08
 */
-INT32U pow_10_n(INT8U pown)
+INT32U pow_10_n( INT8U pown )
 {
     INT32U num = 1;
-
-    while(pown--)
+    while( pown-- )
+    {
         num *= 10;
+    }
     return num;
 }
 
@@ -57,31 +58,25 @@ INT32U pow_10_n(INT8U pown)
 * @date       2018/01/08
 */
 
-void ASCII_2_NUM_AT(INT8U *pBuf, INT32U *num, INT8U len)  // len 为ASCII长度
+void ASCII_2_NUM_AT( INT8U* pBuf, INT32U* num, INT8U len ) // len 为ASCII长度
 {
-
     INT8U i = 0;
     *num = 0;
-
-    while(len)
+    while( len )
     {
-
-        *num += (pBuf[i] - '0') * pow_10_n(len  - 1);
+        *num += ( pBuf[i] - '0' ) * pow_10_n( len  - 1 );
         len --;
         i++;
     }
 }
 
-void ASCII_2_NUM_U8_AT(INT8U *pBuf, INT8U *num, INT8U len)  // len 为ASCII长度
+void ASCII_2_NUM_U8_AT( INT8U* pBuf, INT8U* num, INT8U len ) // len 为ASCII长度
 {
-
     INT8U i = 0;
     *num = 0;
-
-    while(len)
+    while( len )
     {
-
-        *num += (pBuf[i] - '0') * pow_10_n(len  - 1);
+        *num += ( pBuf[i] - '0' ) * pow_10_n( len  - 1 );
         len --;
         i++;
     }
@@ -102,16 +97,13 @@ void ASCII_2_NUM_U8_AT(INT8U *pBuf, INT8U *num, INT8U len)  // len 为ASCII长度
 * @date       2018/01/08
 */
 
-void ASCII_2_NUM_U16_AT(INT8U *pBuf, INT16U *num, INT8U len)  // len 为ASCII长度
+void ASCII_2_NUM_U16_AT( INT8U* pBuf, INT16U* num, INT8U len ) // len 为ASCII长度
 {
-
     INT8U i = 0;
     *num = 0;
-
-    while(len)
+    while( len )
     {
-
-        *num += (pBuf[i] - '0') * pow_10_n(len  - 1);
+        *num += ( pBuf[i] - '0' ) * pow_10_n( len  - 1 );
         len --;
         i++;
     }
@@ -131,29 +123,27 @@ void ASCII_2_NUM_U16_AT(INT8U *pBuf, INT16U *num, INT8U len)  // len 为ASCII长度
 * @author       李晋南
 * @date       2018/01/08
 */
-void NUM_2_ASCII_AT(INT32U num, INT8U *pBuf, INT8U *len)
+void NUM_2_ASCII_AT( INT32U num, INT8U* pBuf, INT8U* len )
 {
     INT8U  i = 0, temp_len;
     INT32U temp_num = num;
     *len = 0;
-
-    if(temp_num == 0)
+    if( temp_num == 0 )
+    {
         *len = 1;
-
-    while(temp_num)
+    }
+    while( temp_num )
     {
         *len += 1;
         temp_num /= 10;
     }
-
     temp_len = *len;
-    while(temp_len)
+    while( temp_len )
     {
-        pBuf[i] = num % pow_10_n(temp_len) /  pow_10_n(temp_len - 1) +  '0';
+        pBuf[i] = num % pow_10_n( temp_len ) /  pow_10_n( temp_len - 1 ) +  '0';
         i++;
         temp_len--;
     }
-
     return;
 }
 
@@ -171,19 +161,27 @@ void NUM_2_ASCII_AT(INT32U num, INT8U *pBuf, INT8U *len)
 * @author       李晋南
 * @date       2018/01/08
 */
-void HEX_2_ASCII_AT(INT8U *pBufhex, INT8U *pBuf,  INT16U hex_len)
+void HEX_2_ASCII_AT( INT8U* pBufhex, INT8U* pBuf,  INT16U hex_len )
 {
     INT16U i;
-    for(i = 0; i < hex_len; i++)
+    for( i = 0; i < hex_len; i++ )
     {
-        if(((pBufhex[i] & 0xf0) >> 4) > 9)
-            pBuf[2 * i] = ((pBufhex[i] & 0xf0) >> 4) - 10 + 'A';
+        if( ( ( pBufhex[i] & 0xf0 ) >> 4 ) > 9 )
+        {
+            pBuf[2 * i] = ( ( pBufhex[i] & 0xf0 ) >> 4 ) - 10 + 'A';
+        }
         else
-            pBuf[2 * i] = ((pBufhex[i] & 0xf0) >> 4) + '0';
-        if((pBufhex[i] & 0x0f) > 9)
-            pBuf[2 * i +  1] = (pBufhex[i] & 0x0f) - 10 + 'A';
+        {
+            pBuf[2 * i] = ( ( pBufhex[i] & 0xf0 ) >> 4 ) + '0';
+        }
+        if( ( pBufhex[i] & 0x0f ) > 9 )
+        {
+            pBuf[2 * i +  1] = ( pBufhex[i] & 0x0f ) - 10 + 'A';
+        }
         else
-            pBuf[2 * i + 1] = (pBufhex[i] & 0x0f) + '0';
+        {
+            pBuf[2 * i + 1] = ( pBufhex[i] & 0x0f ) + '0';
+        }
     }
     return;
 }
@@ -202,128 +200,149 @@ void HEX_2_ASCII_AT(INT8U *pBufhex, INT8U *pBuf,  INT16U hex_len)
 * @author       李晋南
 * @date       2018/01/08
 */
-void ASCII_2_HEX_AT(INT8U *pBuf, INT8U *pBufhex, INT16U hex_len)
+void ASCII_2_HEX_AT( INT8U* pBuf, INT8U* pBufhex, INT16U hex_len )
 {
     INT16U i, index;
-    for(i = 0; i < hex_len; i++)
+    for( i = 0; i < hex_len; i++ )
     {
-
         index = 2 * i;
-        if((pBuf[index] <= '9') && (pBuf[index ] >= '0'))
-            pBufhex[i] = ((pBuf[index] - '0') << 4);
-        else if((pBuf[index ] <= 'z') && (pBuf[index ] >= 'a'))
-            pBufhex[i] = ((pBuf[index] - 'a' + 10) << 4);
-        else if((pBuf[index ] <= 'Z') && (pBuf[index] >= 'A'))
-            pBufhex[i] = ((pBuf[index] - 'A' + 10) << 4);
-
+        if( ( pBuf[index] <= '9' ) && ( pBuf[index ] >= '0' ) )
+        {
+            pBufhex[i] = ( ( pBuf[index] - '0' ) << 4 );
+        }
+        else if( ( pBuf[index ] <= 'z' ) && ( pBuf[index ] >= 'a' ) )
+        {
+            pBufhex[i] = ( ( pBuf[index] - 'a' + 10 ) << 4 );
+        }
+        else if( ( pBuf[index ] <= 'Z' ) && ( pBuf[index] >= 'A' ) )
+        {
+            pBufhex[i] = ( ( pBuf[index] - 'A' + 10 ) << 4 );
+        }
         index = 2 * i + 1;
-        if((pBuf[index] <= '9') && (pBuf[index ] >= '0'))
+        if( ( pBuf[index] <= '9' ) && ( pBuf[index ] >= '0' ) )
+        {
             pBufhex[i] += pBuf[index ] - '0';
-        else if((pBuf[index ] <= 'z') && (pBuf[index ] >= 'a'))
+        }
+        else if( ( pBuf[index ] <= 'z' ) && ( pBuf[index ] >= 'a' ) )
+        {
             pBufhex[i] += pBuf[index] - 'a' + 10;
-        else if((pBuf[index ] <= 'Z') && (pBuf[index] >= 'A'))
+        }
+        else if( ( pBuf[index ] <= 'Z' ) && ( pBuf[index] >= 'A' ) )
+        {
             pBufhex[i] += pBuf[index] - 'A' + 10;
+        }
     }
     return;
 }
 
-void mem_cpy(INT8U *dst, INT8U *src, INT16U len)
+void mem_cpy( INT8U* dst, INT8U* src, INT16U len )
 {
-    while(len--)
+    while( len-- )
     {
-        *(dst++) = *(src++);
+        *( dst++ ) = *( src++ );
     }
 }
 
-INT64U mktime (unsigned int year, unsigned int mon,
+INT64U mktime( unsigned int year, unsigned int mon,
                unsigned int day, unsigned int hour,
-               unsigned int min, unsigned int sec)
+               unsigned int min, unsigned int sec )
 {
-    if (0 >= (int) (mon -= 2))
+    if( 0 >= ( int )( mon -= 2 ) )
     {
         /**//* 1..12 -> 11,12,1..10 */
         mon += 12;      /**//* Puts Feb last since it has leap day */
         year -= 1;
     }
-
-    return (((
-                 (INT64U) (year / 4 - year / 100 + year / 400 + 367 * mon / 12 + day) +
-                 year * 365 - 719499
-             ) * 24 + hour /**/ /* now have hours */
-            ) * 60 + min /**/ /* now have minutes */
+    return ( ( (
+                   ( INT64U )( year / 4 - year / 100 + year / 400 + 367 * mon / 12 + day ) +
+                   year * 365 - 719499
+               ) * 24 + hour /**/ /* now have hours */
+             ) * 60 + min /**/ /* now have minutes */
            ) * 60 + sec; /**/ /* finally seconds */
 }
 
 
-void GetDateTimeFromSecond(unsigned long lSec, AT_time_t *tTime)
+void GetDateTimeFromSecond( unsigned long lSec, AT_time_t* tTime )
 {
     INT16U i, j, iDay;
     unsigned long lDay;
-
     lDay = lSec / SECOND_OF_DAY;
     lSec = lSec % SECOND_OF_DAY;
-
     i = 1970;
-    while(lDay > 365)
+    while( lDay > 365 )
     {
-        if(((i % 4 == 0) && (i % 100 != 0)) || (i % 400 == 0))
+        if( ( ( i % 4 == 0 ) && ( i % 100 != 0 ) ) || ( i % 400 == 0 ) )
+        {
             lDay -= 366;
+        }
         else
+        {
             lDay -= 365;
+        }
         i++;
     }
-    if((lDay == 365) && !(((i % 4 == 0) && (i % 100 != 0)) || (i % 400 == 0)))
+    if( ( lDay == 365 ) && !( ( ( i % 4 == 0 ) && ( i % 100 != 0 ) ) || ( i % 400 == 0 ) ) )
     {
         lDay -= 365;
         i++;
     }
     tTime->year = i;
-    for(j = 0; j < 12; j++)
+    for( j = 0; j < 12; j++ )
     {
-        if((j == 1) && (((i % 4 == 0) && (i % 100 != 0)) || (i % 400 == 0)))
+        if( ( j == 1 ) && ( ( ( i % 4 == 0 ) && ( i % 100 != 0 ) ) || ( i % 400 == 0 ) ) )
+        {
             iDay = 29;
+        }
         else
+        {
             iDay = MON[j];
-        if(lDay >= iDay) lDay -= iDay;
-        else break;
+        }
+        if( lDay >= iDay )
+        {
+            lDay -= iDay;
+        }
+        else
+        {
+            break;
+        }
     }
     tTime->month = j + 1;
     tTime->day = lDay + 1;
-    tTime->hour = (lSec / 3600) % 24; //这里注意，世界时间已经加上北京时间差8，
-    tTime->min = (lSec % 3600) / 60;
-    tTime->sec = (lSec % 3600) % 60;
+    tTime->hour = ( lSec / 3600 ) % 24; //这里注意，世界时间已经加上北京时间差8，
+    tTime->min = ( lSec % 3600 ) / 60;
+    tTime->sec = ( lSec % 3600 ) % 60;
 }
 
 
-void uart_Answer_OK(void)
+void uart_Answer_OK( void )
 {
-    drv_UartSend("\rOK\r", 4);
+    drv_UartSend( "\rOK\r", 4 );
 }
 
 
 
-void uart_Answer_ERROR(void)
+void uart_Answer_ERROR( void )
 {
-    drv_UartSend("\rERROR\r", 7);
+    drv_UartSend( "\rERROR\r", 7 );
 }
 
-void uart_Answer_Invalid_Command(void)
+void uart_Answer_Invalid_Command( void )
 {
-    drv_UartSend("\rInvalid command\r", 17);
+    drv_UartSend( "\rInvalid command\r", 17 );
 }
 
-void uart_Answer_ERRORn(INT8U num)
+void uart_Answer_ERRORn( INT8U num )
 {
     INT8U ERROR_buf[11] = {'\r', 'E', 'R', 'R', 'O', 'R', ':'}, ERROR_len = 8;
-    NUM_2_ASCII_AT(num, ERROR_buf + 7, &ERROR_len );
+    NUM_2_ASCII_AT( num, ERROR_buf + 7, &ERROR_len );
     ERROR_buf[ERROR_len + 7] = '\r';
-    drv_UartSend(ERROR_buf, ERROR_len + 8);
+    drv_UartSend( ERROR_buf, ERROR_len + 8 );
 }
 
 
-void uart_Answer_AT(void)
+void uart_Answer_AT( void )
 {
-    drv_UartSend("\rAT\r", 4);
+    drv_UartSend( "\rAT:1\r", 5 ); // AT: 1  1 AT指令版本号
 }
 /**
 * @brief   硬件初始化，CAC复位
@@ -331,13 +350,12 @@ void uart_Answer_AT(void)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN01_Fn1_AT_HINT(void)
+void DL2013_AFN01_Fn1_AT_HINT( void )
 {
     uart_Answer_OK();
-    drv_Delay10ms(20);                                                                         //  等待发送完毕
+    drv_Delay10ms( 20 );                                                                       //  等待发送完毕
     cac_SaveAll();
     drv_Resetcac();                                                                                  //  CAC复位
-
 }
 
 
@@ -347,81 +365,115 @@ void DL2013_AFN01_Fn1_AT_HINT(void)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN01_Fn2_F3_AT_PINT(void)
+void DL2013_AFN01_Fn2_F3_AT_PINT( void )
 {
     cac_ClearAll();
     uart_Answer_OK();
-
     cac_SaveAll();
-    drv_Delay10ms(20);
-
+    drv_Delay10ms( 20 );
 }
 
 
-
-
-//===============================================================================================
-//  函数名称:        DL2013_AFN02_Fn1
-//  函数描述:   	 转发通信协议数据帧
-//  入口参数:
-//
-//  返回值  :
-//  说明    :        与13H F1无通信延时相同
-//  修改记录:  <作者>      <修改日期>     <版本 >      <描述>
-//			                     陈炎    2013-09-25           1.0           添加注释
-//===============================================================================================
-void DL2013_AFN02_Fn1_AT_DFWD(INT8U *pDAU, INT8U *pBuf, INT16U pLen)  //待续
+/**
+* @brief   抄读表信息
+* @param[in]  无
+* @author       李晋南
+* @date       2018/01/15
+*/
+void DL2013_AFN03_Fn1_F101_AT_RTMN( INT8U* pBuf ) 
 {
+    INT16U len;
+    INT8U Dau_Addr[6], protocol_type, cmd_type, *Get645_data;
+    INT8U  i, flag_get_all_num;
     INT16U tmpDAUNum = 0;
     INT8U tmpFrameType = 0;
-
-    backMeter = 0;
-
-    //  数据长度异常
-    if( (pLen > LEN_USER)
-            || (pBuf[1] + 2 > pLen))
+    if( ( pBuf[20] != ',' ) || ( pBuf[22] != ',' ) || ( pBuf[24] != ',' ) )
     {
-        drv_Printf("\n数据长度错误");
-        uart_Answer_Err();
+        uart_Answer_ERROR();
         return;
     }
-
-    //  已有抄表任务
-    if(mCAC.bMeter == TRUE1)
+    for( i = 0 ; i < 4; i++ )
     {
-        drv_Printf("\n已有抄表任务");
+        if( pBuf[26 + i] == ',' )
+        {
+            ASCII_2_NUM_U16_AT( pBuf + 25, &len, i + 1 );
+            if( len > 200 )
+            {
+                uart_Answer_ERROR();
+                return;
+            }
+            flag_get_all_num   = 1;
+            if( pBuf[27 + i + len] == '\r' )
+            {
+                if( flag_get_all_num == 1 )
+                {
+                    flag_get_all_num = 2;
+                }
+                Get645_data = malloc( len );
+                mem_cpy( Get645_data, pBuf + 27 + i, len );
+                break;
+            }
+        }
+    }
+    if( flag_get_all_num != 2 )
+    {
+        uart_Answer_ERROR();
+        return;
+    }
+    ASCII_2_HEX_AT( pBuf + 8,      Dau_Addr,       6 );
+    ASCII_2_NUM_U8_AT( pBuf + 21,  &protocol_type,   1 );
+    ASCII_2_NUM_U8_AT( pBuf + 23,  &cmd_type,        1 );
+    if( protocol_type == 0 )
+    {
+        backMeter = 1;
+    }
+    else
+    {
+        backMeter = 3;
+    }
+    //  已有抄表任务
+    if( mCAC.bMeter == TRUE1 )
+    {
+        //drv_Printf("\n已有抄表任务");
+        free( Get645_data );
+        uart_Answer_ERROR(); // 需改动为其他错误码
         return ;                                                                //  返回主节点忙
     }
-
     //  查找DAU序号
-    tmpDAUNum = cac_CheckDAUNum(pDAU);
-    drv_Printf("\n目标DAU[%3d] =  ", tmpDAUNum);
-    drv_PrintfDAU(pDAU);
-
+    tmpDAUNum = cac_CheckDAUNum( Dau_Addr );
+    //  drv_Printf( "\n目标DAU[%3d] =  ", tmpDAUNum );
+    drv_PrintfDAU( pDAU );
     //  节点不在档案
-    if(tmpDAUNum >= MAX_DAU)
+    if( tmpDAUNum >= MAX_DAU )
     {
-        drv_Printf("\n节点不在档案");
-        uart_Answer_Unknown();                                                                            //  返回不在网
+        // drv_Printf("\n节点不在档案");
+        free( Get645_data );
+        uart_Answer_ERROR(); // 需改动为其他错误码  //  返回不在网
         return ;
     }
-
     //  若为透传命令
-    if(pBuf[0] == 0x00)
+    if( cmd_type == 0x00 )
     {
         //  更新DAU协议类型
-        mDAU[tmpDAUNum].aDProType[0] = Get645FrameType(&(pBuf[2]));
+        mDAU[tmpDAUNum].aDProType[0] = Get645FrameType( Get645_data );
     }
     //  若有协议字段
     else
     {
         //  解析报文帧类型
-        tmpFrameType = Get645FrameType(&(pBuf[2]));
-
+        tmpFrameType = Get645FrameType( Get645_data );
         mDAU[tmpDAUNum].aDProType[0] = tmpFrameType;
     }
-    drv_Printf("\n==============================启动抄表=============================");
-    set_Meter(tmpDAUNum, &(pBuf[2]), pBuf[1], mDAU[tmpDAUNum].aDProType[0], 0, RF_ASK_METER_DATA);
+    // drv_Printf("\n==============================启动抄表=============================");
+    if( protocol_type == 0 )
+    {
+        set_Meter( tmpDAUNum, Get645_data, len, mDAU[tmpDAUNum].aDProType[0], 0, RF_ASK_DLMS_DATA );
+    }
+    else
+    {
+        set_Meter( tmpDAUNum, Get645_data, len, mDAU[tmpDAUNum].aDProType[0], 0, RF_ASK_METER_DATA );
+    }
+    free( Get645_data );
 }
 
 /**
@@ -430,37 +482,28 @@ void DL2013_AFN02_Fn1_AT_DFWD(INT8U *pDAU, INT8U *pBuf, INT16U pLen)  //待续
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn1_AT_MVINFO(INT8U *pBuf)
+void DL2013_AFN03_Fn1_AT_MVINFO( INT8U* pBuf )
 {
     INT8U i = 0, temp_buf[3];
-
     pBuf[i++] = '\r';
-
-    mem_cpy(pBuf + i, "friendcom", 9);
+    mem_cpy( pBuf + i, "friendcom", 9 );
     i += 9;
     pBuf[i++] = ',';
-
     temp_buf[0] = DT_YEAR;
     temp_buf[1] = DT_MOTH;
     temp_buf[2] = DT_DATA;
-
-    HEX_2_ASCII_AT(temp_buf, pBuf + i, 3);
+    HEX_2_ASCII_AT( temp_buf, pBuf + i, 3 );
     i += 6;
-
     pBuf[i++] = ',';
-
-
     temp_buf[0] = DT_EDITIOM_H;
-    HEX_2_ASCII_AT(temp_buf, pBuf + i, 1);
+    HEX_2_ASCII_AT( temp_buf, pBuf + i, 1 );
     i += 2;
     pBuf[i++] = '.';
     temp_buf[0] = DT_EDITIOM_L;
-    HEX_2_ASCII_AT(temp_buf, pBuf + i, 1);
+    HEX_2_ASCII_AT( temp_buf, pBuf + i, 1 );
     i += 2;
-
-
     pBuf[i++] = '\r';
-    drv_UartSend(pBuf, i);
+    drv_UartSend( pBuf, i );
 }
 
 
@@ -470,14 +513,13 @@ void DL2013_AFN03_Fn1_AT_MVINFO(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn4_AT_HNA(INT8U *pBuf)
+void DL2013_AFN03_Fn4_AT_HNA( INT8U* pBuf )
 {
-
     pBuf[0] = '\r';
     //  写CAC地址到数据单元
-    HEX_2_ASCII_AT(mCAC.aCAddr, pBuf + 1, 6);
+    HEX_2_ASCII_AT( mCAC.aCAddr, pBuf + 1, 6 );
     pBuf[13] = '\r';
-    drv_UartSend(pBuf, 14);
+    drv_UartSend( pBuf, 14 );
 }
 
 /**
@@ -486,28 +528,21 @@ void DL2013_AFN03_Fn4_AT_HNA(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn5_AT_SCCR(INT8U *pBuf)
+void DL2013_AFN03_Fn5_AT_SCCR( INT8U* pBuf )
 {
     INT8U  status_world[2], temp_len1;
-
     //  主节点状态字
     // 周期抄表模式=01b                          01   仅集中器主导(无线); 10   仅路由主导(载波) ; 11 两种都支持(双模异构)
     //  主节点信道特征 =00b                 00 微功率无线；01 单相供电单相传输；10 单供三传；11三供三传
     //  通信速率数量 =  1（0001b）
     //  pBuf[1] 高四位备用，低四位信道数量
-
     status_world[0] = 0x41; //
     status_world[1] = 0x1f; //  信道实际数量32
-
-
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(status_world[1], pBuf + 1, &temp_len1); //信道实际数量
+    NUM_2_ASCII_AT( status_world[1], pBuf + 1, &temp_len1 ); //信道实际数量
     pBuf[temp_len1 + 1] = '\r';
-
-
     // 返回数据
-    drv_UartSend(pBuf, temp_len1 + 2);
-
+    drv_UartSend( pBuf, temp_len1 + 2 );
 }
 
 
@@ -517,14 +552,14 @@ void DL2013_AFN03_Fn5_AT_SCCR(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn7_AT_NMMT(INT8U *pBuf)
+void DL2013_AFN03_Fn7_AT_NMMT( INT8U* pBuf )
 {
     INT8U len = 0;
     pBuf[0] = '\r';
     //  写CAC地址到数据单元
-    NUM_2_ASCII_AT(mCAC.i1ReadMeterMaxTime, pBuf + 1, &len);
+    NUM_2_ASCII_AT( mCAC.i1ReadMeterMaxTime, pBuf + 1, &len );
     pBuf[len + 1] = '\r';
-    drv_UartSend(pBuf, len + 2);
+    drv_UartSend( pBuf, len + 2 );
 }
 
 
@@ -534,18 +569,15 @@ void DL2013_AFN03_Fn7_AT_NMMT(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn8_AT_HNCP(INT8U *pBuf)
+void DL2013_AFN03_Fn8_AT_HNCP( INT8U* pBuf )
 {
     INT8U temp_len1 = 0;
-
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(mCAC.i1BigCHXX, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( mCAC.i1BigCHXX, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf[temp_len1 + 2] = mCAC.i1RFPower + '0';
     pBuf[temp_len1 + 3] = '\r';
-
-    drv_UartSend(pBuf, temp_len1 + 4);
-
+    drv_UartSend( pBuf, temp_len1 + 4 );
 }
 
 /**
@@ -554,22 +586,14 @@ void DL2013_AFN03_Fn8_AT_HNCP(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn9_AT_BRDDT(INT8U *pBuf)
+void DL2013_AFN03_Fn9_AT_BRDDT( INT8U* pBuf )
 {
-
     INT8U temp_len1 = 0;
-
-    INT16U DelayTime = cac_GetBroadDelayTime(mCAC.i2AllNum + 5); //cac_GetBroadDelayTime(mCAC.i2ShiXi);//
-
-
+    INT16U DelayTime = cac_GetBroadDelayTime( mCAC.i2AllNum + 5 ); //cac_GetBroadDelayTime(mCAC.i2ShiXi);//
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(DelayTime, pBuf + 1,  &temp_len1);   //  广播延时根据时隙计算
+    NUM_2_ASCII_AT( DelayTime, pBuf + 1,  &temp_len1 ); //  广播延时根据时隙计算
     pBuf[temp_len1 + 1] = '\r';
-
-
-
-    drv_UartSend(pBuf, temp_len1 + 2);
-
+    drv_UartSend( pBuf, temp_len1 + 2 );
 }
 
 
@@ -678,12 +702,11 @@ INT8U Data03HF10_(INT8U *xBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn10_AT_HMOD(INT8U *pBuf)    //待续
+void DL2013_AFN03_Fn10_AT_HMOD( INT8U* pBuf )  //待续
 {
     INT8U length = 0;
-    //length = Data03HF10(pBuf);	                                                              //  写用户数据单元
-
-    drv_UartSend(pBuf, length);
+    //length = Data03HF10(pBuf);                                                                  //  写用户数据单元
+    drv_UartSend( pBuf, length );
 }
 
 
@@ -694,14 +717,14 @@ void DL2013_AFN03_Fn10_AT_HMOD(INT8U *pBuf)    //待续
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn100_AT_RSSIT(INT8U *pBuf)
+void DL2013_AFN03_Fn100_AT_RSSIT( INT8U* pBuf )
 {
     //  场强门限，取值50~120
     INT8U len  = 0;
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(mCAC.i1Valve, pBuf + 1, &len);
+    NUM_2_ASCII_AT( mCAC.i1Valve, pBuf + 1, &len );
     pBuf[len + 1] = '\r';
-    drv_UartSend(pBuf, len + 2);
+    drv_UartSend( pBuf, len + 2 );
 }
 
 
@@ -711,17 +734,16 @@ void DL2013_AFN03_Fn100_AT_RSSIT(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN03_Fn101_AT_RTC(INT8U *pBuf)
+void DL2013_AFN03_Fn101_AT_RTC( INT8U* pBuf )
 {
     INT8U i = 0;
     AT_time_t time_now;
-
-    GetDateTimeFromSecond(time_total_from_1970, &time_now);
-
+    GetDateTimeFromSecond( time_total_from_1970, &time_now );
     time_now.year -= 2000;
-
-    if((time_now.year <= 0) || (time_now.year > 2038))
+    if( ( time_now.year <= 0 ) || ( time_now.year > 2038 ) )
+    {
         time_now.year = 0;
+    }
     pBuf[i++] = '\r';
     pBuf[i++] = time_now.year / 10 + '0';
     pBuf[i++] = time_now.year % 10 + '0';
@@ -736,7 +758,7 @@ void DL2013_AFN03_Fn101_AT_RTC(INT8U *pBuf)
     pBuf[i++] = time_now.sec / 10 + '0';
     pBuf[i++] = time_now.sec % 10 + '0';
     pBuf[i++] = '\r';
-    drv_UartSend(pBuf, i);
+    drv_UartSend( pBuf, i );
 }
 
 
@@ -746,34 +768,31 @@ void DL2013_AFN03_Fn101_AT_RTC(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN04_Fn1_AT_TSST(INT8U *pBuf)
+void DL2013_AFN04_Fn1_AT_TSST( INT8U* pBuf )
 {
     INT16U timeout = 0;
     INT8U  i;
-
-    for(i = 0 ; i < 5; i++)
+    for( i = 0 ; i < 5; i++ )
     {
-        if(pBuf[9 + i] == '\r')
+        if( pBuf[9 + i] == '\r' )
         {
-            if(i > 2)
+            if( i > 2 )
             {
-                uart_Answer_ERRORn(ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
-            ASCII_2_NUM_AT(&(pBuf[8]), (INT32U *)&timeout, i + 1);
-            if(timeout > 255)
+            ASCII_2_NUM_AT( &( pBuf[8] ), ( INT32U* )&timeout, i + 1 );
+            if( timeout > 255 )
             {
-                uart_Answer_ERRORn(ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
-            drv_SendTest(timeout, mCAC.i1BigCH);
+            drv_SendTest( timeout, mCAC.i1BigCH );
             uart_Answer_OK();
             return;
         }
     }
-
     uart_Answer_ERROR();
-
 }
 
 
@@ -785,14 +804,17 @@ void DL2013_AFN04_Fn1_AT_TSST(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN04_Fn2_AT_NRC(void)
+void DL2013_AFN04_Fn2_AT_NRC( void )
 {
     set_call_all();
-
-    if(tsk_call_all())
+    if( tsk_call_all() )
+    {
         uart_Answer_OK();
+    }
     else
+    {
         uart_Answer_ERROR();
+    }
 }
 
 
@@ -802,37 +824,28 @@ void DL2013_AFN04_Fn2_AT_NRC(void)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN05_Fn1_AT_HNA(INT8U *pBuf)
+void DL2013_AFN05_Fn1_AT_HNA( INT8U* pBuf )
 {
     INT8U i = 0, addr_buf[6];
-
-
-    ASCII_2_HEX_AT(pBuf + 7, addr_buf, 6);
-
+    ASCII_2_HEX_AT( pBuf + 7, addr_buf, 6 );
     // 若主节点地址变动
-    if( memcmp(mCAC.aCAddr, addr_buf, 6 ) != 0)
+    if( memcmp( mCAC.aCAddr, addr_buf, 6 ) != 0 )
     {
         // 提取CAC地址
-        for(i = 0; i < 6; i++)
+        for( i = 0; i < 6; i++ )
         {
             mCAC.aCAddr[i] = addr_buf[i] ;
         }
-
         // 计算panID
-        LongToPanID(mCAC.aCAddr, mCAC.panID);
-
+        LongToPanID( mCAC.aCAddr, mCAC.panID );
         // 计算实际工作频道
-        mCAC.i1BigCH = (INT8U)((mCAC.panID[0] % (SUM_CH_NUM - 1)) + 1);
-
-        drv_setCH(mCAC.i1BigCH);
-
+        mCAC.i1BigCH = ( INT8U )( ( mCAC.panID[0] % ( SUM_CH_NUM - 1 ) ) + 1 );
+        drv_setCH( mCAC.i1BigCH );
         // 需要根据底噪自动工作频道
         mCAC.bNewWrkCH  =   TRUE1;
-
         // 保存CAC变更信息
         cac_SaveCAC();
     }
-
     uart_Answer_OK();
 }
 
@@ -842,44 +855,89 @@ void DL2013_AFN05_Fn1_AT_HNA(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN05_Fn2_AT_NEREP(INT8U *pBuf)
+void DL2013_AFN05_Fn2_AT_NEREP( INT8U* pBuf )
 {
-    if(pBuf[9] > '1')
+    if( pBuf[9] > '1' )
     {
         uart_Answer_ERROR();
         return;
     }
-    else if(pBuf[9] == '1')
-        mCAC.bReport = TRUE1;                                                                          //  允许上报
-    else if(pBuf[9] == '0')
-        mCAC.bReport = FALSE0;                                                                         //  禁止上报
-
+    else if( pBuf[9] == '1' )
+    {
+        mCAC.bReport = TRUE1;    //  允许上报
+    }
+    else if( pBuf[9] == '0' )
+    {
+        mCAC.bReport = FALSE0;    //  禁止上报
+    }
     uart_Answer_OK();                                                                                       // 返回确认
-
 }
 
 /**
 * @brief         启动广播
 * @param[in]  pBuf 接收和发送数据缓存数据指针
 * @author       李晋南
-* @date       2018/01/08
+* @date       2018/01/08 初稿 & 2018/01/15 完善
 */
-void DL2013_AFN05_Fn3_AT_SBRD(INT8U *pBuf) //待续
+void DL2013_AFN05_Fn3_AT_SBRD( INT8U* pBuf )
 {
-
-
-    gDtMeter *tM = (gDtMeter *)(mRf.aBuf);
-    tM->i1Baud = (INT8U)(mCAC.i2BrdNum++);
-
-    rf_BroadcastTime(&(pBuf[2]), pBuf[1]);                                      //  广播校时
-
-    drv_SetTimeMeter((INT16U)(xb_Capacity(mCAC.i2DownDAU)));                     //  动态规模
-
+    gDtMeter* tM = ( gDtMeter* )( mRf.aBuf );
+    INT8U year, month, day, hour, minute, sec, i;
+    INT8U conformation_buf[20] = {0x01, 0x12,
+                                  0x68, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x68, 0x08,
+                                  0x06, //    buf[11] 长度
+                                  0x37, 0x53, 0x44, 0x48, 0x34, 0x4B, //   buf[12] 秒 分 时， 日 月 年 +33
+                                  0x09, //    buf[18]
+                                  0x16
+                                 };
+    ASCII_2_NUM_U8_AT( pBuf + 11, &year, 2 );
+    ASCII_2_NUM_U8_AT( pBuf + 13, &month, 2 );
+    ASCII_2_NUM_U8_AT( pBuf + 15, &day, 2 );
+    if( IsLegal( year, month, day ) == 0 )
+    {
+        uart_Answer_ERRORn( ERROR_05H_F3_AT_TIME_OVER_FLOW );
+        return;
+    }
+    ASCII_2_NUM_U8_AT( pBuf + 17, &hour, 2 );
+    if( hour > 24 )
+    {
+        uart_Answer_ERRORn( ERROR_05H_F3_AT_TIME_OVER_FLOW );
+        return;
+    }
+    ASCII_2_NUM_U8_AT( pBuf + 19, &minute, 2 );
+    if( minute > 60 )
+    {
+        uart_Answer_ERRORn( ERROR_05H_F3_AT_TIME_OVER_FLOW );
+        return;
+    }
+    ASCII_2_NUM_U8_AT( pBuf + 21, &sec, 2 );
+    if( sec > 60 )
+    {
+        uart_Answer_ERRORn( ERROR_05H_F3_AT_TIME_OVER_FLOW );
+        return;
+    }
+    conformation_buf[18] = 0;
+    for( i = 2; i < 18; i++ )
+    {
+        conformation_buf[18] += conformation_buf[i];
+    }
+    conformation_buf[12] = sec + 0x30;
+    conformation_buf[13] = minute + 0x30;
+    conformation_buf[14] = hour + 0x30;
+    conformation_buf[15] = day + 0x30;
+    conformation_buf[16] = month + 0x30;
+    conformation_buf[17] = year + 0x30;
+    conformation_buf[18] = 0;
+    for( i = 2; i < 18; i++ )
+    {
+        conformation_buf[18] += conformation_buf[i ];
+    }
+    tM->i1Baud = ( INT8U )( mCAC.i2BrdNum++ );
+    rf_BroadcastTime( &( conformation_buf[2] ), conformation_buf[1] );                                 //  广播校时
+    drv_SetTimeMeter( ( INT16U )( xb_Capacity( mCAC.i2DownDAU ) ) );             //  动态规模
     mCAC.bMeter = TRUE1;
     mCAC.bBroad = TRUE1;
-
-    //uart_Answer_Guangbo(cac_GetBroadDelayTime(mCAC.i2AllNum + 1));                  // 返回确认
-    uart_Answer_OK();
+    uart_Answer_OK();// 返回确认
 }
 
 
@@ -889,24 +947,23 @@ void DL2013_AFN05_Fn3_AT_SBRD(INT8U *pBuf) //待续
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN05_Fn4_AT_NMMT(INT8U *pBuf)
+void DL2013_AFN05_Fn4_AT_NMMT( INT8U* pBuf )
 {
     INT8U i = 0 ;
     INT16U timeout;
-
-    for(i = 0 ; i < 5; i++)
+    for( i = 0 ; i < 5; i++ )
     {
-        if(pBuf[9 + i] == '\r')
+        if( pBuf[9 + i] == '\r' )
         {
-            if(i > 2)
+            if( i > 2 )
             {
-                uart_Answer_ERRORn(ERROR_05H_F4_AT_TIMEOUT_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_05H_F4_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
-            ASCII_2_NUM_AT(&(pBuf[8]), (INT32U *)&timeout, i + 1);
-            if(timeout > 255)
+            ASCII_2_NUM_AT( &( pBuf[8] ), ( INT32U* )&timeout, i + 1 );
+            if( timeout > 255 )
             {
-                uart_Answer_ERRORn(ERROR_05H_F4_AT_TIMEOUT_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_05H_F4_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
             mCAC.i1ReadMeterMaxTime =  timeout;
@@ -915,7 +972,6 @@ void DL2013_AFN05_Fn4_AT_NMMT(INT8U *pBuf)
         }
     }
     uart_Answer_Invalid_Command();
-
 }
 
 /**
@@ -924,38 +980,31 @@ void DL2013_AFN05_Fn4_AT_NMMT(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN05_Fn5_AT_HNCP(INT8U *pBuf)
+void DL2013_AFN05_Fn5_AT_HNCP( INT8U* pBuf )
 {
-
     INT8U  speed, Power;
     INT8U i;
-
-
-    for(i = 0 ; i < 3; i++)
+    for( i = 0 ; i < 3; i++ )
     {
-        if((pBuf[11 + i] == '\r') && (pBuf[9 + i] == ','))
+        if( ( pBuf[11 + i] == '\r' ) && ( pBuf[9 + i] == ',' ) )
         {
-            ASCII_2_NUM_AT(&(pBuf[8]), (INT32U *)&speed, i + 1);
-
-            ASCII_2_NUM_AT(&(pBuf[10 + i]), (INT32U *)&Power, 1);
-
+            ASCII_2_NUM_AT( &( pBuf[8] ), ( INT32U* )&speed, i + 1 );
+            ASCII_2_NUM_AT( &( pBuf[10 + i] ), ( INT32U* )&Power, 1 );
             // 功率只有四档
-            if (Power <= 4)
+            if( Power <= 4 )
             {
                 mCAC.i1RFPower = Power;
             }
             else
             {
-                uart_Answer_ERRORn(ERROR_05H_F5_AT_POWER_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_05H_F5_AT_POWER_OVER_FLOW );
             }
-
-
             // 自动选择或默认：不改变
-            if(speed >= 254)                                                                                //  254自动选择
+            if( speed >= 254 )                                                                              //  254自动选择
             {
                 uart_Answer_OK();
             }
-            else if((speed < SUM_CH_NUM) && (speed > 0))                                                  //  1~32     // 1 ~ 32，更新保存频道
+            else if( ( speed < SUM_CH_NUM ) && ( speed > 0 ) )                                            //  1~32     // 1 ~ 32，更新保存频道
             {
                 mCAC.i1BigCHXX = speed;
                 cac_SaveCAC();
@@ -963,17 +1012,12 @@ void DL2013_AFN05_Fn5_AT_HNCP(INT8U *pBuf)
             }
             else                                                                                                 //  其余
             {
-                uart_Answer_ERRORn(ERROR_05H_F5_AT_SPEED_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_05H_F5_AT_SPEED_OVER_FLOW );
             }
-
             return;
         }
-
     }
-
     uart_Answer_Invalid_Command();
-
-
 }
 
 
@@ -983,16 +1027,20 @@ void DL2013_AFN05_Fn5_AT_HNCP(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN05_Fn100_AT_RSSIT(INT8U *pBuf)
+void DL2013_AFN05_Fn100_AT_RSSIT( INT8U* pBuf )
 {
     INT8U rssi_num = 0;
-    if(pBuf[11] == '\r')
-        ASCII_2_NUM_AT(pBuf + 9,  (INT32U *)&rssi_num, 2);
-    else if(pBuf[12] == '\r')
-        ASCII_2_NUM_AT(pBuf + 9,   (INT32U *)&rssi_num, 3);
-    if((rssi_num < MIN_RISS) || (rssi_num > MAX_RISS))
+    if( pBuf[11] == '\r' )
     {
-        uart_Answer_ERRORn(ERROR_05H_F100_AT_RSSIT_OVER_FLOW);
+        ASCII_2_NUM_AT( pBuf + 9, ( INT32U* )&rssi_num, 2 );
+    }
+    else if( pBuf[12] == '\r' )
+    {
+        ASCII_2_NUM_AT( pBuf + 9, ( INT32U* )&rssi_num, 3 );
+    }
+    if( ( rssi_num < MIN_RISS ) || ( rssi_num > MAX_RISS ) )
+    {
+        uart_Answer_ERRORn( ERROR_05H_F100_AT_RSSIT_OVER_FLOW );
     }
     else
     {
@@ -1003,32 +1051,41 @@ void DL2013_AFN05_Fn100_AT_RSSIT(INT8U *pBuf)
 }
 
 
-INT8U IsLeapYear(int year)
+static INT8U IsLeapYear( int year )
 {
-    if(((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0))
+    if( ( ( year % 4 == 0 ) && ( year % 100 != 0 ) ) || ( year % 400 == 0 ) )
+    {
         return 1;
+    }
     return 0;
 }
-INT8U IsLegal(int year, int mon, int day)
+INT8U IsLegal( int year, int mon, int day )
 {
     //大：1 3 5 7 8 10 12
     //小：4 6 9 11
     //平：2
-
-    if(year < 0 || mon <= 0 || mon > 12 || day <= 0 || day > 31)return 0;
-
-    if(1 == mon || 3 == mon || 5 == mon || 7 == mon || 8 == mon || 10 == mon || 12 == mon)
+    if( year < 0 || mon <= 0 || mon > 12 || day <= 0 || day > 31 )
+    {
+        return 0;
+    }
+    if( 1 == mon || 3 == mon || 5 == mon || 7 == mon || 8 == mon || 10 == mon || 12 == mon )
     {
         return 1;
     }
-    if(IsLeapYear(year))
+    if( IsLeapYear( year ) )
     {
-        if(2 == mon && (28 == day || 30 == day || 31 == day))return 0;
+        if( 2 == mon && ( 28 == day || 30 == day || 31 == day ) )
+        {
+            return 0;
+        }
         return 1;
     }
     else
     {
-        if(2 == mon && (29 == day || 30 == day || 31 == day))return 0;
+        if( 2 == mon && ( 29 == day || 30 == day || 31 == day ) )
+        {
+            return 0;
+        }
         return 1;
     }
 }
@@ -1038,66 +1095,55 @@ INT8U IsLegal(int year, int mon, int day)
 * @author       李晋南
 * @date       2018/01/08
 */
-void AT_RTC_REQ(void)
+void AT_RTC_REQ( void )
 {
     INT8U buf[10] = "\rAT+RTC?\r";
-
-    drv_UartSend(buf, 9);
-
+    drv_UartSend( buf, 9 );
 }
 
-void DL2013_AFN05_Fn101_AT_RTC(INT8U *pBuf)
+void DL2013_AFN05_Fn101_AT_RTC( INT8U* pBuf )
 {
     INT16U year = 0;
-    INT8U month , day , hour, minute, sec;
-
-
-    ASCII_2_NUM_U16_AT(pBuf + 7, &year, 2);
+    INT8U month, day, hour, minute, sec;
+    ASCII_2_NUM_U16_AT( pBuf + 7, &year, 2 );
     year += 2000;
-    ASCII_2_NUM_U8_AT(pBuf + 9, &month, 2);
-    ASCII_2_NUM_U8_AT(pBuf + 11, &day, 2);
-
-
-    if(IsLegal(year, month, day) == 0)
+    ASCII_2_NUM_U8_AT( pBuf + 9, &month, 2 );
+    ASCII_2_NUM_U8_AT( pBuf + 11, &day, 2 );
+    if( IsLegal( year, month, day ) == 0 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F101_AT_TIME_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F101_AT_TIME_OVER_FLOW );
         return;
     }
-
-    ASCII_2_NUM_U8_AT(pBuf + 13, &hour, 2);
-    if(hour > 24)
+    ASCII_2_NUM_U8_AT( pBuf + 13, &hour, 2 );
+    if( hour > 24 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F101_AT_TIME_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F101_AT_TIME_OVER_FLOW );
         return;
     }
     gSysTime.hour = hour;    // 设置小时
-    ASCII_2_NUM_U8_AT(pBuf + 15, &minute, 2);
-    if(minute > 60)
+    ASCII_2_NUM_U8_AT( pBuf + 15, &minute, 2 );
+    if( minute > 60 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F101_AT_TIME_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F101_AT_TIME_OVER_FLOW );
         return;
     }
     gSysTime.count = 60 * minute;
-    ASCII_2_NUM_U8_AT(pBuf + 17, &sec, 2);
-    if(sec > 60)
+    ASCII_2_NUM_U8_AT( pBuf + 17, &sec, 2 );
+    if( sec > 60 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F101_AT_TIME_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F101_AT_TIME_OVER_FLOW );
         return;
     }
     gSysTime.count += sec;                                             // 1h = 60min = 3600s
-
-
-    if((gSysTime.hour == 0x21) && (TskOptimizeLimitTime == 0))
+    if( ( gSysTime.hour == 0x21 ) && ( TskOptimizeLimitTime == 0 ) )
     {
-
-        if(mCAC.bSetup != TRUE1 && nPrioIIFlag.fHourSate != 2)                                                               // 有新增节点
+        if( mCAC.bSetup != TRUE1 && nPrioIIFlag.fHourSate != 2 )                                                             // 有新增节点
         {
             nPrioIIFlag.fHourSate = 2;
-            drv_SetTimeDown(10);
+            drv_SetTimeDown( 10 );
         }
     }
-
-    time_total_from_1970 = mktime( year, month, day, hour, minute, sec);
+    time_total_from_1970 = mktime( year, month, day, hour, minute, sec );
     uart_Answer_OK();
 }
 
@@ -1110,19 +1156,15 @@ void DL2013_AFN05_Fn101_AT_RTC(INT8U *pBuf)
 * @date       2018/01/08
 */
 
-void DL2013_AFN10_Fn1_AT_NNUM(INT8U *pBuf)
+void DL2013_AFN10_Fn1_AT_NNUM( INT8U* pBuf )
 {
     INT8U temp_len1 = 0, temp_len2 = 0;
-
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(mCAC.i2DownDAU, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( mCAC.i2GoodDAU, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
-    NUM_2_ASCII_AT(MAX_DAU, pBuf + temp_len1 + 2,  &temp_len2);
+    NUM_2_ASCII_AT( MAX_DAU, pBuf + temp_len1 + 2,  &temp_len2 );
     pBuf[temp_len1 + temp_len2 + 2] = '\r';
-
-
-    drv_UartSend(pBuf, temp_len1 + temp_len2  + 3);
-
+    drv_UartSend( pBuf, temp_len1 + temp_len2  + 3 );
     gFlgUrtCmpFile  =   TRUE1;
 }
 
@@ -1132,121 +1174,109 @@ void DL2013_AFN10_Fn1_AT_NNUM(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/09
 */
-void DL2013_AFN10_Fn2_AT_NINFO(INT8U *pBuf)
+void DL2013_AFN10_Fn2_AT_NINFO( INT8U* pBuf )
 {
     INT16U tN1;
     INT16U tN2;
     INT16U i, pBuf_index;
-
-
     INT16U start_serial_number = 0, serial_number_num = 0;
     INT8U flag_get_all_num = 0, serial_number_len;
     INT8U temp_len1, relay_level = 0;
-
-
-    for(i = 0 ; i < 10; i++)
+    for( i = 0 ; i < 10; i++ )
     {
-        if(pBuf[9 + i] == ',')
+        if( pBuf[9 + i] == ',' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 8, &start_serial_number, i + 1);
+            ASCII_2_NUM_U16_AT( pBuf + 8, &start_serial_number, i + 1 );
             serial_number_len = i + 1;
             flag_get_all_num   = 1;
         }
-        else if(pBuf[9 + i] == '\r')
+        else if( pBuf[9 + i] == '\r' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len);
-            if(flag_get_all_num == 1)
+            ASCII_2_NUM_U16_AT( pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len );
+            if( flag_get_all_num == 1 )
+            {
                 flag_get_all_num = 2;
+            }
             break;
         }
     }
-    if(flag_get_all_num != 2)
+    if( flag_get_all_num != 2 )
     {
         uart_Answer_ERROR();
         return;
     }
-    if(serial_number_num > 25)
+    if( serial_number_num > 25 )
     {
-        uart_Answer_ERRORn(ERROR_10H_F2_AT_NODE_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_10H_F2_AT_NODE_OVER_FLOW );
         return;
     }
-
     pBuf[0] = '\r';
-
     // 组网节点个数
-    NUM_2_ASCII_AT(serial_number_num, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( serial_number_num, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf_index = temp_len1 + 2;
-
-
-    tN1	 = 1;
-    tN2	 = start_serial_number;                                                                                //  tN2保存从节点起始序号
-
-    for(i = 0; i < mCAC.i2AllNum; i++)                                                           // 遍历从节点队列
+    tN1  = 1;
+    tN2  = start_serial_number;                                                                                //  tN2保存从节点起始序号
+    for( i = 0; i < mCAC.i2AllNum; i++ )                                                         // 遍历从节点队列
     {
-        if(uart_DAUType(i, 3) == TRUE1)                                                         //  若是下载节点，tN1加1
+        if( uart_DAUType( i, 3 ) == TRUE1 )                                                     //  若是下载节点，tN1加1
         {
-            if(tN1 >= tN2)                                                                                    //  找到起始序号，跳出循环
+            if( tN1 >= tN2 )                                                                                  //  找到起始序号，跳出循环
+            {
                 break;
+            }
             tN1++;
         }
     }
     tN2 = 0;
-    for(; i < mCAC.i2AllNum; i++)                                                                  //  继续遍历从节点序列
-        while(1)
+    for( ; i < mCAC.i2AllNum; i++ )                                                                //  继续遍历从节点序列
+    {
+        if( uart_DAUType( i, 3 ) == TRUE1 )                                                     //  若是下载节点，tN2加1
         {
-            if(uart_DAUType(i, 3) == TRUE1)                                                         //  若是下载节点，tN2加1
+            HEX_2_ASCII_AT( mDAU[i].aDAddr, pBuf + pBuf_index,  6 );
+            pBuf_index += 12;
+            pBuf[pBuf_index ++] =  ',';
+            if( dauF_Good( i ) == TRUE1 )                                                        //  830台体接口:  0~6表中继层次，0x0f表不在网
             {
-
-
-                HEX_2_ASCII_AT(mDAU[i].aDAddr, pBuf + pBuf_index ,  6);
-                pBuf_index += 12;
-                pBuf[pBuf_index ++] =  ',';
-
-
-                if(dauF_Good(i) == TRUE1)                                                            //  830台体接口:  0~6表中继层次，0x0f表不在网
-                {
-                    relay_level = mDAU[i].b4DLayerSon - 1;
-                }
-                else
-                {
-                    relay_level = 9;
-                }
-                pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
-                pBuf[pBuf_index ++] = ',';
-
-
-                pBuf[pBuf_index ++] = '0' +  (INT8U)(mDAU[i].aDProType[1]);              // 通信协议类型 comm_type
-                pBuf[pBuf_index ++] = ',';                                                    // 协议类型:  档案类型
-                tN2++;
-                if(tN2 >= serial_number_num || tN2 >= 25)                                                     // 若tN2 达到25或要求查询数量，退出循环
-                    break;
+                relay_level = mDAU[i].b4DLayerSon - 1;
+            }
+            else
+            {
+                relay_level = 9;
+            }
+            pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
+            pBuf[pBuf_index ++] = ',';
+            pBuf[pBuf_index ++] = '0' + ( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
+            pBuf[pBuf_index ++] = ',';                                                    // 协议类型:  档案类型
+            tN2++;
+            if( tN2 >= serial_number_num || tN2 >= 25 )                                                   // 若tN2 达到25或要求查询数量，退出循环
+            {
+                break;
             }
         }
-
-    if(temp_len1 == 2)
+    }
+    if( temp_len1 == 2 )
     {
-        if(tN2 / 10 == 0)
+        if( tN2 / 10 == 0 )
         {
             pBuf[1] = '0';
             pBuf[2] = '0' + tN2;
         }
         else
-            NUM_2_ASCII_AT(tN2, pBuf + 1,  &temp_len1);
-
+        {
+            NUM_2_ASCII_AT( tN2, pBuf + 1,  &temp_len1 );
+        }
     }
-    else  if(temp_len1 == 1)
+    else  if( temp_len1 == 1 )
     {
         pBuf[1] = '0' + tN2;
     }
     pBuf[--pBuf_index] = '\r';
-
-    drv_UartSend(pBuf, pBuf_index + 1);
-
-    if(FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize && TRUE1  == gFlgUrtCmpFile)           // CAC未组网且未维护且开始档案同步
+    drv_UartSend( pBuf, pBuf_index + 1 );
+    if( FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize && TRUE1  == gFlgUrtCmpFile )         // CAC未组网且未维护且开始档案同步
     {
         //  drv_Printf("\n本次下载%d个节点，其中有新增节点", pBuf[2]);
-        drv_SetTimeDown(40);
+        drv_SetTimeDown( 40 );
     }
 }
 
@@ -1256,34 +1286,29 @@ void DL2013_AFN10_Fn2_AT_NINFO(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN10_Fn4_AT_RTST(INT8U *pBuf)
+void DL2013_AFN10_Fn4_AT_RTST( INT8U* pBuf )
 {
     INT8U temp_len1, temp_len2, work_switch = 0;
-
-
     pBuf[0] = '\r';
-
     // 组网节点个数
-    NUM_2_ASCII_AT(mCAC.i2DownDAU, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( mCAC.i2DownDAU, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     // 在网节点个数
-    NUM_2_ASCII_AT(mCAC.i2GoodDAU, pBuf + temp_len1 + 2,  &temp_len2);
+    NUM_2_ASCII_AT( mCAC.i2GoodDAU, pBuf + temp_len1 + 2,  &temp_len2 );
     pBuf[temp_len1 + temp_len2 + 2] = ',';
-
     //  写工作开关格式
-
-    if(mCAC.bYuLi == TRUE1)                                                                                 //  搜表
+    if( mCAC.bYuLi == TRUE1 )                                                                               //  搜表
+    {
         work_switch += 2;
-    if(mCAC.bSetup == TRUE1)                                                                              //  组网
+    }
+    if( mCAC.bSetup == TRUE1 )                                                                            //  组网
+    {
         work_switch += 1;
-
+    }
     pBuf[temp_len1 + temp_len2  + 3] = work_switch +  '0';
     pBuf[temp_len1 + temp_len2 + 4] = '\r';
-
-
     // 返回数据
-    drv_UartSend(pBuf, temp_len1 + temp_len2 + 5);
-
+    drv_UartSend( pBuf, temp_len1 + temp_len2 + 5 );
 }
 
 
@@ -1295,7 +1320,7 @@ void DL2013_AFN10_Fn4_AT_RTST(INT8U *pBuf)
 * @date       2018/01/09
 */
 
-void DL2013_AFN10_Fn5_AT_NLST(INT8U *pBuf)
+void DL2013_AFN10_Fn5_AT_NLST( INT8U* pBuf )
 {
     INT16U tN1;
     INT16U tN2;
@@ -1303,98 +1328,86 @@ void DL2013_AFN10_Fn5_AT_NLST(INT8U *pBuf)
     INT16U start_serial_number = 0, serial_number_num = 0;
     INT8U flag_get_all_num = 0, serial_number_len;
     INT8U temp_len1;
-
-
-
-    for(i = 0 ; i < 10; i++)
+    for( i = 0 ; i < 10; i++ )
     {
-        if(pBuf[9 + i] == ',')
+        if( pBuf[9 + i] == ',' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 8, &start_serial_number, i + 1);
+            ASCII_2_NUM_U16_AT( pBuf + 8, &start_serial_number, i + 1 );
             serial_number_len = i + 1;
             flag_get_all_num   = 1;
         }
-        else if(pBuf[9 + i] == '\r')
+        else if( pBuf[9 + i] == '\r' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len);
-            if(flag_get_all_num == 1)
+            ASCII_2_NUM_U16_AT( pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len );
+            if( flag_get_all_num == 1 )
+            {
                 flag_get_all_num = 2;
+            }
             break;
         }
     }
-    if(flag_get_all_num != 2)
+    if( flag_get_all_num != 2 )
     {
         uart_Answer_ERROR();
         return;
     }
-    if(serial_number_num > 25)
+    if( serial_number_num > 25 )
     {
-        uart_Answer_ERRORn(ERROR_10H_F5_AT_NODE_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_10H_F5_AT_NODE_OVER_FLOW );
         return;
     }
-
-
-
-
-    tN1	 = 1;
-    tN2	 = start_serial_number;                                                                                  //  tN2保存从节点起始序号
-
-    for(i = 0; i < mCAC.i2AllNum; i++)                                                           // 遍历从节点队列
+    tN1  = 1;
+    tN2  = start_serial_number;                                                                                  //  tN2保存从节点起始序号
+    for( i = 0; i < mCAC.i2AllNum; i++ )                                                         // 遍历从节点队列
     {
-        if(uart_DAUType(i, 2) == TRUE1)                                                         //  若是不在网节点，tN1加1
+        if( uart_DAUType( i, 2 ) == TRUE1 )                                                     //  若是不在网节点，tN1加1
         {
-            if(tN1 >= tN2)                                                                                    //  找到起始序号，跳出循环
+            if( tN1 >= tN2 )                                                                                  //  找到起始序号，跳出循环
+            {
                 break;
+            }
             tN1++;
         }
     }
     tN2 = 0;
-
     pBuf[0] = '\r';
-
     // 组网节点个数
-    NUM_2_ASCII_AT(serial_number_num, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( serial_number_num, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf_index = temp_len1 + 2;
-
-    for(; i < mCAC.i2AllNum; i++)                                                                  //  继续遍历从节点序列
+    for( ; i < mCAC.i2AllNum; i++ )                                                                //  继续遍历从节点序列
     {
-        if(uart_DAUType(i, 2) == TRUE1)                                                         //  若是不在网、故障节点，tN2加1
+        if( uart_DAUType( i, 2 ) == TRUE1 )                                                     //  若是不在网、故障节点，tN2加1
         {
-
             //   mDAU[i].aDAddr[0] =   mDAU[i].aDAddr[1] =   mDAU[i].aDAddr[2] =   mDAU[i].aDAddr[3] =   mDAU[i].aDAddr[4] =   mDAU[i].aDAddr[5] = 0x66;
-
-            HEX_2_ASCII_AT(mDAU[i].aDAddr, pBuf + pBuf_index ,  6);
+            HEX_2_ASCII_AT( mDAU[i].aDAddr, pBuf + pBuf_index,  6 );
             pBuf_index += 12;
             pBuf[pBuf_index ++] =  ',';
-
             tN2++;
-            if(tN2 >= serial_number_num || tN2 >= 25)                                                         //  若tN2 达到25或要求查询数量，退出循环
+            if( tN2 >= serial_number_num || tN2 >= 25 )                                                       //  若tN2 达到25或要求查询数量，退出循环
+            {
                 break;
+            }
         }
     }
-
-    if(temp_len1 == 2)
+    if( temp_len1 == 2 )
     {
-        if(tN2 / 10 == 0)
+        if( tN2 / 10 == 0 )
         {
             pBuf[1] = '0';
             pBuf[2] = '0' + tN2;
         }
         else
-            NUM_2_ASCII_AT(tN2, pBuf + 1,  &temp_len1);
-
+        {
+            NUM_2_ASCII_AT( tN2, pBuf + 1,  &temp_len1 );
+        }
     }
-    else  if(temp_len1 == 1)
+    else  if( temp_len1 == 1 )
     {
         pBuf[1] = '0' + tN2;
-
     }
-
     pBuf[--pBuf_index] = '\r';
-
-    drv_UartSend(pBuf, pBuf_index + 1);
-
+    drv_UartSend( pBuf, pBuf_index + 1 );
 }
 /**
 * @brief       查询主动注册从节点信息
@@ -1402,7 +1415,7 @@ void DL2013_AFN10_Fn5_AT_NLST(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN10_Fn6_AT_AREG(INT8U *pBuf) // 0108已验证，待实际测试方法测试
+void DL2013_AFN10_Fn6_AT_AREG( INT8U* pBuf ) // 0108已验证，待实际测试方法测试
 {
     INT16U tN1;
     INT16U tN2;
@@ -1410,68 +1423,63 @@ void DL2013_AFN10_Fn6_AT_AREG(INT8U *pBuf) // 0108已验证，待实际测试方法测试
     INT16U start_serial_number = 0, serial_number_num = 0;
     INT8U flag_get_all_num = 0, serial_number_len;
     INT8U temp_len1, relay_level = 0;
-
-    for(i = 0 ; i < 10; i++)
+    for( i = 0 ; i < 10; i++ )
     {
-        if(pBuf[9 + i] == ',')
+        if( pBuf[9 + i] == ',' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 8, &start_serial_number, i + 1);
+            ASCII_2_NUM_U16_AT( pBuf + 8, &start_serial_number, i + 1 );
             serial_number_len = i + 1;
             flag_get_all_num   = 1;
         }
-        else if(pBuf[9 + i] == '\r')
+        else if( pBuf[9 + i] == '\r' )
         {
-            ASCII_2_NUM_U16_AT(pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len);
-            if(flag_get_all_num == 1)
+            ASCII_2_NUM_U16_AT( pBuf + 9 + serial_number_len, &serial_number_num, i  - serial_number_len );
+            if( flag_get_all_num == 1 )
+            {
                 flag_get_all_num = 2;
+            }
             break;
         }
     }
-    if(flag_get_all_num != 2)
+    if( flag_get_all_num != 2 )
     {
         uart_Answer_ERROR();
         return;
     }
-    if(serial_number_num > 25)
+    if( serial_number_num > 25 )
     {
-        uart_Answer_ERRORn(ERROR_10H_F6_AT_NODE_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_10H_F6_AT_NODE_OVER_FLOW );
         return;
     }
-
-    tN1	 = 1;
-    tN2	 = start_serial_number;                                                                                  //  tN2保存从节点起始序号
-
-    for(i = 0; i < mCAC.i2AllNum; i++)                                                           // 遍历从节点队列
+    tN1  = 1;
+    tN2  = start_serial_number;                                                                                  //  tN2保存从节点起始序号
+    for( i = 0; i < mCAC.i2AllNum; i++ )                                                         // 遍历从节点队列
     {
-        if(uart_DAUType(i, 5) == TRUE1)                                                         //  若是主动注册节点，tN1加1
+        if( uart_DAUType( i, 5 ) == TRUE1 )                                                     //  若是主动注册节点，tN1加1
         {
-            if(tN1 >= tN2)                                                                                    //  找到起始序号，跳出循环
+            if( tN1 >= tN2 )                                                                                  //  找到起始序号，跳出循环
+            {
                 break;
+            }
             tN1++;
         }
     }
     tN2 = 0;
-
-
     pBuf[0] = '\r';
-
     // 组网节点个数
-    NUM_2_ASCII_AT(serial_number_num, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( serial_number_num, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf_index = temp_len1 + 2;
-
-    for(; i < mCAC.i2AllNum; i++)                                                                  //  继续遍历从节点序列
+    for( ; i < mCAC.i2AllNum; i++ )                                                                //  继续遍历从节点序列
     {
-        if(uart_DAUType(i, 5) == TRUE1)                                                         //  若是主动注册节点，tN2加1
+        if( uart_DAUType( i, 5 ) == TRUE1 )                                                     //  若是主动注册节点，tN2加1
         {
-
             //   mDAU[i].aDAddr[0] =   mDAU[i].aDAddr[1] =   mDAU[i].aDAddr[2] =   mDAU[i].aDAddr[3] =   mDAU[i].aDAddr[4] =   mDAU[i].aDAddr[5] = 0x66;
             // 在网节点个数
-            HEX_2_ASCII_AT(mDAU[i].aDAddr, pBuf + pBuf_index ,  6);
+            HEX_2_ASCII_AT( mDAU[i].aDAddr, pBuf + pBuf_index,  6 );
             pBuf_index += 12;
             pBuf[pBuf_index ++] =  ',';
-
-            if(dauF_Good(i) == TRUE1)                                                                    //  在网中继层次-1，不在网0x0F
+            if( dauF_Good( i ) == TRUE1 )                                                                //  在网中继层次-1，不在网0x0F
             {
                 relay_level = mDAU[i].b4DLayerSon - 1;                                            //  写中继级别，其余位默认全0
             }
@@ -1481,37 +1489,33 @@ void DL2013_AFN10_Fn6_AT_AREG(INT8U *pBuf) // 0108已验证，待实际测试方法测试
             }
             pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
             pBuf[pBuf_index ++] = ',';
-
-
-
-            pBuf[pBuf_index ++] = '0' +  (INT8U)(mDAU[i].aDProType[1]);              // 通信协议类型 comm_type
+            pBuf[pBuf_index ++] = '0' + ( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
             pBuf[pBuf_index ++] = ',';
-
             tN2++;
-            if(tN2 >= serial_number_num || tN2 >= 25)                                                      //  若tN2 达到25或要求查询数量，退出循环
+            if( tN2 >= serial_number_num || tN2 >= 25 )                                                    //  若tN2 达到25或要求查询数量，退出循环
+            {
                 break;
+            }
         }
     }
-    if(temp_len1 == 2)
+    if( temp_len1 == 2 )
     {
-        if(tN2 / 10 == 0)
+        if( tN2 / 10 == 0 )
         {
             pBuf[1] = '0';
             pBuf[2] = '0' + tN2;
         }
         else
-            NUM_2_ASCII_AT(tN2, pBuf + 1,  &temp_len1);
-
+        {
+            NUM_2_ASCII_AT( tN2, pBuf + 1,  &temp_len1 );
+        }
     }
-    else  if(temp_len1 == 1)
+    else  if( temp_len1 == 1 )
     {
         pBuf[1] = '0' + tN2;
-
     }
-
     pBuf[--pBuf_index] = '\r';
-
-    drv_UartSend(pBuf, pBuf_index + 1);
+    drv_UartSend( pBuf, pBuf_index + 1 );
 }
 
 /**
@@ -1520,14 +1524,13 @@ void DL2013_AFN10_Fn6_AT_AREG(INT8U *pBuf) // 0108已验证，待实际测试方法测试
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN10_Fn100_AT_SSSL(INT8U *pBuf)
+void DL2013_AFN10_Fn100_AT_SSSL( INT8U* pBuf )
 {
     INT8U len  = 0;
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(mCAC.i2Capacity, pBuf + 1, &len);
+    NUM_2_ASCII_AT( mCAC.i2Capacity, pBuf + 1, &len );
     pBuf[len + 1] = '\r';
-    drv_UartSend(pBuf, len + 2);
-
+    drv_UartSend( pBuf, len + 2 );
 #ifdef  _LD_USE_TEST
     set_scan();
 #endif
@@ -1539,7 +1542,7 @@ void DL2013_AFN10_Fn100_AT_SSSL(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/09
 */
-void DL2013_AFN10_Fn101_AT_NPWR(INT8U *pBuf)
+void DL2013_AFN10_Fn101_AT_NPWR( INT8U* pBuf )
 {
     INT16U i, pBuf_index;                                                                    // 遍历索引（2B）
     INT16U tN2               =  0;                                                // 单帧个数计数
@@ -1547,88 +1550,67 @@ void DL2013_AFN10_Fn101_AT_NPWR(INT8U *pBuf)
     INT16U li2LastNum        =  li2MaxNum;                                        // 剩余未上报总数
     INT8U temp_len1, temp_len, relay_level = 0, version_h, version_l, flag_send_once = 0;
     pBuf[0] = '\r';
-
     // 组网节点个数
-    NUM_2_ASCII_AT(li2MaxNum, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( li2MaxNum, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf[temp_len1 + 2] = '0'; //本次传输的节点个数      -             十位
     pBuf[temp_len1 + 3] = '0'; //本次传输的节点个数      -             个位
     pBuf[temp_len1 + 4] = ',';
     pBuf_index = temp_len1 + 5;
-
-
-    for (i = 0; i < mCAC.i2AllNum; i++)                                           // 队列非空时，遍历队列
+    for( i = 0; i < mCAC.i2AllNum; i++ )                                          // 队列非空时，遍历队列
     {
-        if (TRUE1 == uart_DAUType(i, 6))                                            // 是微功率无线节点
+        if( TRUE1 == uart_DAUType( i, 6 ) )                                         // 是微功率无线节点
         {
             // 在网节点个数
-            HEX_2_ASCII_AT(mDAU[i].aDAddr, pBuf + pBuf_index ,  6);
+            HEX_2_ASCII_AT( mDAU[i].aDAddr, pBuf + pBuf_index,  6 );
             pBuf_index += 12;
             pBuf[pBuf_index ++] =  ',';
-
-
 #if   PRO_AREA == 0                                                              // 国网标准: 上报中继级别
-            relay_level      = (TRUE1 == dauF_Good(i)) ? mDAU[i].b4DLayerSon - 1 : 0x0f;
+            relay_level      = ( TRUE1 == dauF_Good( i ) ) ? mDAU[i].b4DLayerSon - 1 : 0x0f;
 #elif PRO_AREA == 1                                                              // 北京标准：上报层次 //目前按照这种
-            relay_level      = (TRUE1 == dauF_Good(i)) ? mDAU[i].b4DLayerSon - 1 : 9;
+            relay_level      = ( TRUE1 == dauF_Good( i ) ) ? mDAU[i].b4DLayerSon - 1 : 9;
 #endif
-
             pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
             pBuf[pBuf_index ++] = ',';
-
-
-            pBuf[pBuf_index ++] = '0' +  (INT8U)(mDAU[i].aDProType[1]);              // 通信协议类型 comm_type
+            pBuf[pBuf_index ++] = '0' + ( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
             pBuf[pBuf_index ++] = ',';
-
-
-            version_h      = (TRUE1 == dauF_Good(i)) ? mDAU[i].aDVersion[0]    : 0;
-            version_l      = (TRUE1 == dauF_Good(i)) ? mDAU[i].aDVersion[1]    : 0;
-
-
-
-            NUM_2_ASCII_AT(version_h, pBuf + pBuf_index, &temp_len);
+            version_h      = ( TRUE1 == dauF_Good( i ) ) ? mDAU[i].aDVersion[0]    : 0;
+            version_l      = ( TRUE1 == dauF_Good( i ) ) ? mDAU[i].aDVersion[1]    : 0;
+            NUM_2_ASCII_AT( version_h, pBuf + pBuf_index, &temp_len );
             pBuf_index += temp_len;
             pBuf[pBuf_index ++] = '.';
-            NUM_2_ASCII_AT(version_l, pBuf + pBuf_index, &temp_len);
+            NUM_2_ASCII_AT( version_l, pBuf + pBuf_index, &temp_len );
             pBuf_index += temp_len;
             pBuf[pBuf_index ++] = ',';
-
             tN2++;                                                                    // 节点计数tN2加1
         }
-
-        if (tN2 >= li2LastNum  ||  tN2 >= 20)                                       // 若tN2满20或剩余总数，串口输出
+        if( tN2 >= li2LastNum  ||  tN2 >= 20 )                                      // 若tN2满20或剩余总数，串口输出
         {
-
             pBuf[temp_len1 + 2] = tN2 / 10 + '0'; //本次传输的节点个数      -             十位
             pBuf[temp_len1 + 3] = tN2 % 10 + '0'; //本次传输的节点个数      -             个位
-
-
             pBuf[--pBuf_index] = '\r';
-
-            drv_UartSend(pBuf, pBuf_index + 1);
-
+            drv_UartSend( pBuf, pBuf_index + 1 );
             pBuf_index = temp_len1 + 5;
-
             drv_stm32WDT();                                                           // 喂狗
-            drv_Delay10ms(50);
+            drv_Delay10ms( 50 );
             li2LastNum           =  li2LastNum - tN2;                                 // 更新剩余总数
             tN2                  =  0;                                                // 计数tN2清空
             flag_send_once = 1;
         }
-
-        if (0 == li2LastNum)                                                        // 剩余为0，可跳出遍历
+        if( 0 == li2LastNum )                                                       // 剩余为0，可跳出遍历
         {
             break;
         }
     }
-
-    if (0 == mCAC.i2AllNum)                                                       // 队列为空时
+    if( 0 == mCAC.i2AllNum )                                                      // 队列为空时
     {
-        drv_UartSend("\r0\r", 3);
+        drv_UartSend( "\r0\r", 3 );
         return;
     }
-    if(flag_send_once == 0)
-        uart_Answer_ERRORn(ERROR_10H_F101_AT_NO_THIS_NODE);
+    if( flag_send_once == 0 )
+    {
+        uart_Answer_ERRORn( ERROR_10H_F101_AT_NO_THIS_NODE );
+    }
 }
 
 /**
@@ -1637,26 +1619,25 @@ void DL2013_AFN10_Fn101_AT_NPWR(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn1_NADD(INT8U *pBuf)
+void DL2013_AFN11_Fn1_NADD( INT8U* pBuf )
 {
     INT16U i,  node_num, addr_index;
     INT8U addr_dau[6];
-
-    if(pBuf[9] == ',')
+    if( pBuf[9] == ',' )
     {
-        ASCII_2_NUM_AT(pBuf + 8, (INT32U *)&node_num, 1);
+        ASCII_2_NUM_AT( pBuf + 8, ( INT32U* )&node_num, 1 );
         addr_index = 10;
-        if(pBuf[9 + 13 * node_num] != '\r')
+        if( pBuf[9 + 13 * node_num] != '\r' )
         {
             uart_Answer_ERROR();
             return;
         }
     }
-    else if(pBuf[10] == ',')
+    else if( pBuf[10] == ',' )
     {
-        ASCII_2_NUM_AT(pBuf + 8, (INT32U *)&node_num, 2);
+        ASCII_2_NUM_AT( pBuf + 8, ( INT32U* )&node_num, 2 );
         addr_index = 11;
-        if(pBuf[10 + 13 * node_num] != '\r')
+        if( pBuf[10 + 13 * node_num] != '\r' )
         {
             uart_Answer_ERROR();
             return;
@@ -1667,29 +1648,25 @@ void DL2013_AFN11_Fn1_NADD(INT8U *pBuf)
         uart_Answer_ERROR();
         return;
     }
-
-
-    if(node_num <= 30)
+    if( node_num <= 30 )
     {
-        for(i = 0; i < node_num; i++)                                                                // 循环添加DAU
+        for( i = 0; i < node_num; i++ )                                                              // 循环添加DAU
         {
-            ASCII_2_HEX_AT(pBuf + addr_index + i * 13 , addr_dau, 6);
+            ASCII_2_HEX_AT( pBuf + addr_index + i * 13, addr_dau, 6 );
             // 添加addr
-            cac_UserAddDAU(addr_dau);
+            cac_UserAddDAU( addr_dau );
         }
-        cac_CountDAU();	                                                                            // 统计更新DAU数量信息
-
-        if(FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize)                                       // 当前未组网且未维护
+        cac_CountDAU();                                                                             // 统计更新DAU数量信息
+        if( FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize )                                     // 当前未组网且未维护
         {
             //   drv_Printf("\n本次下载%d个节点，其中有新增节点", pBuf[2]);
-            drv_SetTimeDown(40);
+            drv_SetTimeDown( 40 );
         }
-
         uart_Answer_OK();                                                                          // 确认应答
     }
     else
     {
-        uart_Answer_ERRORn(ERROR_11H_F1_AT_ADD_NUM_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_11H_F1_AT_ADD_NUM_OVER_FLOW );
     }
 }
 
@@ -1699,27 +1676,25 @@ void DL2013_AFN11_Fn1_NADD(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn2_NDEL(INT8U *pBuf)
+void DL2013_AFN11_Fn2_NDEL( INT8U* pBuf )
 {
     INT16U i, j, node_num, addr_index;
     INT8U addr_dau[6];  //flag_del_ok = 0;
-
-
-    if(pBuf[9] == ',')
+    if( pBuf[9] == ',' )
     {
-        ASCII_2_NUM_AT(pBuf + 8, (INT32U *)&node_num, 1);
+        ASCII_2_NUM_AT( pBuf + 8, ( INT32U* )&node_num, 1 );
         addr_index = 10;
-        if(pBuf[9 + 13 * node_num] != '\r')
+        if( pBuf[9 + 13 * node_num] != '\r' )
         {
             uart_Answer_ERROR();
             return;
         }
     }
-    else if(pBuf[10] == ',')
+    else if( pBuf[10] == ',' )
     {
-        ASCII_2_NUM_AT(pBuf + 8, (INT32U *)&node_num, 2);
+        ASCII_2_NUM_AT( pBuf + 8, ( INT32U* )&node_num, 2 );
         addr_index = 11;
-        if(pBuf[10 + 13 * node_num] != '\r')
+        if( pBuf[10 + 13 * node_num] != '\r' )
         {
             uart_Answer_ERROR();
             return;
@@ -1730,26 +1705,23 @@ void DL2013_AFN11_Fn2_NDEL(INT8U *pBuf)
         uart_Answer_ERROR();
         return;
     }
-
-
-    if(node_num <= 30)
+    if( node_num <= 30 )
     {
-        for(i = 0; i < node_num; i++)                                                                            //  循环删除DAU
+        for( i = 0; i < node_num; i++ )                                                                          //  循环删除DAU
         {
             //flag_del_ok = 0;
             // 处理addr
-            ASCII_2_HEX_AT(pBuf + addr_index + i * 13 , addr_dau, 6);
-            for(j = 0; j < mCAC.i2AllNum; j++)                                                       //  遍历定位待删除DAU在序列中位置
+            ASCII_2_HEX_AT( pBuf + addr_index + i * 13, addr_dau, 6 );
+            for( j = 0; j < mCAC.i2AllNum; j++ )                                                     //  遍历定位待删除DAU在序列中位置
             {
                 //执行 删除addr
-                if(mDAU[j].bDUse == TRUE1
+                if( mDAU[j].bDUse == TRUE1
                         && mDAU[j].bDWrite == TRUE1
-                        && Cb_CmpArry_stat(addr_dau, mDAU[j].aDAddr, 6) == TRUE1)
+                        && Cb_CmpArry_stat( addr_dau, mDAU[j].aDAddr, 6 ) == TRUE1 )
                 {
                     mDAU[j].bDUse = FALSE0;                                                               //  使用标志位标记为0
                     mDAU[j].bDWrite = FALSE0;                                                            //  下载标志位标记为0
-                    mth_ClearRiss(j);                                                                              //  清空场强表
-
+                    mth_ClearRiss( j );                                                                            //  清空场强表
                     //   flag_del_ok = 1;
                     break;
                 }
@@ -1760,14 +1732,13 @@ void DL2013_AFN11_Fn2_NDEL(INT8U *pBuf)
                  uart_Answer_ERRORn(i + 1);
              }
              */
-
         }
-        cac_CountDAU();	                                                                                    //  统计更新DAU数量信息
+        cac_CountDAU();                                                                                     //  统计更新DAU数量信息
         uart_Answer_OK();                                                                                   //  确认应答
     }
     else
     {
-        uart_Answer_ERRORn(ERROR_11H_F2_AT_DEL_NUM_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_11H_F2_AT_DEL_NUM_OVER_FLOW );
     }
 }
 
@@ -1777,20 +1748,17 @@ void DL2013_AFN11_Fn2_NDEL(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn100_AT_SSSL(INT8U *pBuf)
+void DL2013_AFN11_Fn100_AT_SSSL( INT8U* pBuf )
 {
     INT16U i, scale = 0;
-
-
-    for(i = 0 ; i < 3; i++)
+    for( i = 0 ; i < 3; i++ )
     {
-        if(pBuf[9 + i] == '\r')
+        if( pBuf[9 + i] == '\r' )
         {
-            ASCII_2_NUM_AT(&(pBuf[8]), (INT32U *)&scale, i + 1);
-
-            if((scale < 2) || (scale > 512))
+            ASCII_2_NUM_AT( &( pBuf[8] ), ( INT32U* )&scale, i + 1 );
+            if( ( scale < 2 ) || ( scale > 512 ) )
             {
-                uart_Answer_ERRORn(ERROR_10H_F100_AT_SCALE_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_10H_F100_AT_SCALE_OVER_FLOW );
             }
             else
             {
@@ -1800,9 +1768,7 @@ void DL2013_AFN11_Fn100_AT_SSSL(INT8U *pBuf)
             }
             return;
         }
-
     }
-
     uart_Answer_Invalid_Command();
 }
 
@@ -1813,15 +1779,14 @@ void DL2013_AFN11_Fn100_AT_SSSL(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn101_AT_RTMN(INT8U *pBuf)
+void DL2013_AFN11_Fn101_AT_RTMT( INT8U* pBuf )
 {
     // 若没有组网也没有网络维护
-    if (FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize)
+    if( FALSE0 == mCAC.bSetup && FALSE0 == mCAC.bOptimize )
     {
         // 倒数10s启动网络维护
-        drv_SetTimeDown(10);
+        drv_SetTimeDown( 10 );
     }
-
     // 返回确认
     uart_Answer_OK();
 }
@@ -1832,18 +1797,16 @@ void DL2013_AFN11_Fn101_AT_RTMN(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn102_AT_RTMS(INT8U *pBuf)
+void DL2013_AFN11_Fn102_AT_RTMS( INT8U* pBuf )
 {
     // 保存档案
     cac_SaveAll();
-
     // 若没有组网
-    if(FALSE0 == mCAC.bSetup)
+    if( FALSE0 == mCAC.bSetup )
     {
         // 需要组网
         set_setup_son();
     }
-
     // 返回确认
     uart_Answer_OK();
 }
@@ -1855,50 +1818,39 @@ void DL2013_AFN11_Fn102_AT_RTMS(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN14_Fn2_AT_GCLK(INT8U *pBuf) // 雷同与RTC
+void DL2013_AFN14_Fn2_AT_GCLK( INT8U* pBuf ) // 雷同与RTC
 {
-
-    INT8U  hour, minute , sec;
-
-
-    ASCII_2_NUM_AT(pBuf + 8, (INT32U *)&hour, 2);
-    if(hour > 24)
+    INT8U  hour, minute, sec;
+    ASCII_2_NUM_AT( pBuf + 8, ( INT32U* )&hour, 2 );
+    if( hour > 24 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F100_AT_RSSIT_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F100_AT_RSSIT_OVER_FLOW );
         return;
     }
     gSysTime.hour = hour;    // 设置小时
-    ASCII_2_NUM_AT(pBuf + 10, (INT32U *)&minute, 2);
-    if(minute > 60)
+    ASCII_2_NUM_AT( pBuf + 10, ( INT32U* )&minute, 2 );
+    if( minute > 60 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F100_AT_RSSIT_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F100_AT_RSSIT_OVER_FLOW );
         return;
     }
     gSysTime.count = 60 * minute;
-    ASCII_2_NUM_AT(pBuf + 12, (INT32U *)&sec, 2);
-    if(sec > 60)
+    ASCII_2_NUM_AT( pBuf + 12, ( INT32U* )&sec, 2 );
+    if( sec > 60 )
     {
-        uart_Answer_ERRORn(ERROR_05H_F100_AT_RSSIT_OVER_FLOW);
+        uart_Answer_ERRORn( ERROR_05H_F100_AT_RSSIT_OVER_FLOW );
         return;
     }
     gSysTime.count += sec;                                             // 1h = 60min = 3600s
-
-
-    if((gSysTime.hour == 0x21) && (TskOptimizeLimitTime == 0))
+    if( ( gSysTime.hour == 0x21 ) && ( TskOptimizeLimitTime == 0 ) )
     {
-
-        if(mCAC.bSetup != TRUE1 && nPrioIIFlag.fHourSate != 2)                                  // 有新增节点
+        if( mCAC.bSetup != TRUE1 && nPrioIIFlag.fHourSate != 2 )                                // 有新增节点
         {
             nPrioIIFlag.fHourSate = 2;
-
-            drv_SetTimeDown(40);
+            drv_SetTimeDown( 40 );
         }
-
     }
-  
     uart_Answer_OK();
-
-  
 }
 
 
@@ -1909,62 +1861,61 @@ void DL2013_AFN14_Fn2_AT_GCLK(INT8U *pBuf) // 雷同与RTC
 * @date       2018/01/08
 */
 // 待续
-void DL2013_AFN0A_Fn51_AT_REFI(INT8U *pBuf)
+void DL2013_AFN0A_Fn51_AT_REFI( INT8U* pBuf )
 {
     INT16U tDAUN;
     INT16U i;
     INT8U k;
     INT8U tPage;
-    INT8U *pRiss;
-
+    INT8U* pRiss;
     tDAUN = pBuf[1];
     tDAUN = tDAUN << 8;
     tDAUN += pBuf[0];
-
-    if(tDAUN == 0xFFFF)
+    if( tDAUN == 0xFFFF )
+    {
         pRiss = drvBuf.pRiss;
+    }
     else
-        pRiss = drvBuf.pRiss + (tDAUN + 1) * LEN_ONE_RISS;
-
+    {
+        pRiss = drvBuf.pRiss + ( tDAUN + 1 ) * LEN_ONE_RISS;
+    }
     tPage = 1;
     k = 0;
-    for(i = 0; i <= MAX_DAU; i++)
+    for( i = 0; i <= MAX_DAU; i++ )
     {
-        if((i & 1) == 0)
-            pBuf[4 + k] = (*pRiss) >> 4;
+        if( ( i & 1 ) == 0 )
+        {
+            pBuf[4 + k] = ( *pRiss ) >> 4;
+        }
         else
         {
-            pBuf[4 + k] = (*pRiss) & 0x0F;
+            pBuf[4 + k] = ( *pRiss ) & 0x0F;
             pRiss++;
         }
-
         k++;
-        if(k >= 200)
+        if( k >= 200 )
         {
             pBuf[2] = tPage;
             pBuf[3] = MAX_DAU / 200 + 1;
-
             // 返回数据
-            uart_Answer_Data(204);
-
+            uart_Answer_Data( 204 );
             // 再等待100ms
-            drv_Delay10ms(30);
-
+            drv_Delay10ms( 30 );
             k = 0;
             tPage++;
         }
     }
     // 最后一帧
-    if(k > 0)
+    if( k > 0 )
     {
         pBuf[2] = tPage;
         pBuf[3] = MAX_DAU / 200 + 1;
-
-        for(; k < 200; k++)
+        for( ; k < 200; k++ )
+        {
             pBuf[4 + k] = 0;
-
+        }
         // 返回数据
-        uart_Answer_Data(204);
+        uart_Answer_Data( 204 );
     }
 }
 
@@ -1975,80 +1926,74 @@ void DL2013_AFN0A_Fn51_AT_REFI(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/09
 */
-void DL2013_AFN0A_Fn52_AT_RAR(INT8U *pBuf)
+void DL2013_AFN0A_Fn52_AT_RAR( INT8U* pBuf )
 {
     INT8U tN, temp_len1, temp_len2;
     INT16U i, pBuf_index = 0, j, flag_no_data = 0;
     INT16U tTop = 0xFFFF;
     INT16U tEnd = 0xFFFF;
     INT8U  addr_buf[512];
-
     tN = 0;
-    for(i = 0; i < mCAC.i2AllNum; i++)
+    for( i = 0; i < mCAC.i2AllNum; i++ )
     {
-        if(tTop == 0xFFFF)
-            tTop = i;
-        tEnd = i;
-
-        // 读取有效点
-        if(dauF_Down(i) == TRUE1)
+        if( tTop == 0xFFFF )
         {
-            HEX_2_ASCII_AT(mDAU[i].aDAddr, addr_buf + pBuf_index ,  6);
+            tTop = i;
+        }
+        tEnd = i;
+        // 读取有效点
+        if( dauF_Down( i ) == TRUE1 )
+        {
+            HEX_2_ASCII_AT( mDAU[i].aDAddr, addr_buf + pBuf_index,  6 );
             pBuf_index += 12;
             addr_buf[pBuf_index ++] =  ',';
         }
         else
         {
-            for(j = 0; j < 12; j ++ )
+            for( j = 0; j < 12; j ++ )
             {
                 addr_buf[pBuf_index ++] =  '0';
             }
             addr_buf[pBuf_index ++] =  ',';
         }
-
-
         tN++;
-        if(tN >= 30)
+        if( tN >= 30 )
         {
-
             pBuf[0] = '\r';
-            NUM_2_ASCII_AT(tTop, pBuf + 1,  &temp_len1);
+            NUM_2_ASCII_AT( tTop, pBuf + 1,  &temp_len1 );
             pBuf[temp_len1 + 1] = ',';
-            NUM_2_ASCII_AT(tEnd, pBuf + temp_len1 + 2,  &temp_len2);
+            NUM_2_ASCII_AT( tEnd, pBuf + temp_len1 + 2,  &temp_len2 );
             pBuf[temp_len1 + temp_len2 + 2] = ',';
             addr_buf[pBuf_index - 1] =  '\r';
-            mem_cpy(pBuf + temp_len1 + temp_len2 + 3, addr_buf, pBuf_index);
-            drv_UartSend(pBuf, temp_len1 + temp_len2 + pBuf_index + 3);
+            mem_cpy( pBuf + temp_len1 + temp_len2 + 3, addr_buf, pBuf_index );
+            drv_UartSend( pBuf, temp_len1 + temp_len2 + pBuf_index + 3 );
             // 再等待100ms
-            drv_Delay10ms(30);
-
+            drv_Delay10ms( 30 );
             tN = 0;
             flag_no_data = 1;
             tTop = 0xFFFF;
-            memset(addr_buf, 0, sizeof(addr_buf));
+            memset( addr_buf, 0, sizeof( addr_buf ) );
             pBuf_index = 0;
         }
     }
-
-    if(tN != 0)
+    if( tN != 0 )
     {
         pBuf[0] = '\r';
-        NUM_2_ASCII_AT(tTop, pBuf + 1,  &temp_len1);
+        NUM_2_ASCII_AT( tTop, pBuf + 1,  &temp_len1 );
         pBuf[temp_len1 + 1] = ',';
-        NUM_2_ASCII_AT(tEnd, pBuf + temp_len1 + 2,  &temp_len2);
+        NUM_2_ASCII_AT( tEnd, pBuf + temp_len1 + 2,  &temp_len2 );
         pBuf[temp_len1 + temp_len2 + 2] = ',';
         addr_buf[pBuf_index - 1] =  '\r';
-        mem_cpy(pBuf + temp_len1 + temp_len2 + 3, addr_buf, pBuf_index);
-
-        drv_UartSend(pBuf, temp_len1 + temp_len2 + pBuf_index + 3);
+        mem_cpy( pBuf + temp_len1 + temp_len2 + 3, addr_buf, pBuf_index );
+        drv_UartSend( pBuf, temp_len1 + temp_len2 + pBuf_index + 3 );
         flag_no_data = 1;
         // 再等待100ms
-        drv_Delay10ms(30);
+        drv_Delay10ms( 30 );
     }
-    if(flag_no_data == 0)
+    if( flag_no_data == 0 )
+    {
         uart_Answer_ERROR();
-
-
+    }
 }
 
 /**
@@ -2057,34 +2002,35 @@ void DL2013_AFN0A_Fn52_AT_RAR(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFNF0_Fn1_AT_CACS(INT8U *pBuf)
+void DL2013_AFNF0_Fn1_AT_CACS( INT8U* pBuf )
 {
     INT8U temp_len1, temp_len2, temp_len3;
-
-
     pBuf[0] = '\r';
-    if(mCAC.bSetup == TRUE1)
+    if( mCAC.bSetup == TRUE1 )
+    {
         pBuf[1] = '0';
-    else if(mCAC.bMeter == TRUE1)
+    }
+    else if( mCAC.bMeter == TRUE1 )
+    {
         pBuf[1] = '1';
+    }
     else
+    {
         pBuf[1] = '2';
+    }
     pBuf[2] = ',';
-
-
     cac_CountDAU();
-
     // 组网节点个数
-    NUM_2_ASCII_AT(mCAC.i2InNetDAU, pBuf + 3,  &temp_len1);
+    NUM_2_ASCII_AT( mCAC.i2InNetDAU, pBuf + 3,  &temp_len1 );
     pBuf[temp_len1 + 3] = ',';
     // 下载节点个数
-    NUM_2_ASCII_AT(mCAC.i2DownDAU, pBuf + temp_len1 + 4,  &temp_len2);
+    NUM_2_ASCII_AT( mCAC.i2GoodDAU, pBuf + temp_len1 + 4,  &temp_len2 );
     pBuf[temp_len1 + temp_len2 + 4] = ',';
     // 故障节点个数
-    NUM_2_ASCII_AT(mCAC.i2BadDAU, pBuf + temp_len1 + temp_len2 + 5,  &temp_len3);
+    NUM_2_ASCII_AT( mCAC.i2BadDAU, pBuf + temp_len1 + temp_len2 + 5,  &temp_len3 );
     pBuf[temp_len1 + temp_len2 + temp_len3 + 5] = '\r';
     // 返回数据
-    drv_UartSend(pBuf, temp_len1 + temp_len2 + temp_len3 + 6);
+    drv_UartSend( pBuf, temp_len1 + temp_len2 + temp_len3 + 6 );
 }
 /**
 * @brief                CAC验证使用
@@ -2093,33 +2039,25 @@ void DL2013_AFNF0_Fn1_AT_CACS(INT8U *pBuf)
 * @date       2018/01/08
 */
 
-void DL2013_AFNF0_Fn100_AT_CACV(INT8U *pBuf)
+void DL2013_AFNF0_Fn100_AT_CACV( INT8U* pBuf )
 {
     INT32U tCRC;
     INT8U CRC32_data[4];
-
-    if(pBuf[16] != '\r')
+    if( pBuf[16] != '\r' )
     {
         uart_Answer_ERROR();
         return;
     }
-
-    ASCII_2_HEX_AT(pBuf + 8, CRC32_data, 4);
-
-    tCRC = LZCRC32(CRC32_data, 0, 4);
-
-    CRC32_data[0] = (INT8U)(tCRC >> 0);
-    CRC32_data[1] = (INT8U)(tCRC >> 8);
-    CRC32_data[2] = (INT8U)(tCRC >> 16);
-    CRC32_data[3] = (INT8U)(tCRC >> 24);
-
+    ASCII_2_HEX_AT( pBuf + 8, CRC32_data, 4 );
+    tCRC = LZCRC32( CRC32_data, 0, 4 );
+    CRC32_data[0] = ( INT8U )( tCRC >> 0 );
+    CRC32_data[1] = ( INT8U )( tCRC >> 8 );
+    CRC32_data[2] = ( INT8U )( tCRC >> 16 );
+    CRC32_data[3] = ( INT8U )( tCRC >> 24 );
     pBuf[0] = '\r';
-
-    HEX_2_ASCII_AT(CRC32_data, pBuf + 1, 4);
-
+    HEX_2_ASCII_AT( CRC32_data, pBuf + 1, 4 );
     pBuf[9] = '\r';
-
-    drv_UartSend(pBuf,  10);
+    drv_UartSend( pBuf,  10 );
 }
 /**
 * @brief               读取内部版本号
@@ -2127,24 +2065,20 @@ void DL2013_AFNF0_Fn100_AT_CACV(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFNF0_Fn101_AT_RIV(INT8U *pBuf)
+void DL2013_AFNF0_Fn101_AT_RIV( INT8U* pBuf )
 {
-
     // DT_PROTOCOL ,DT_EDITIOM_H.DT_EDITIOM_L,DT_CUSTOM
     INT8U temp_len1 = 0, temp_len2 = 0, temp_len3 = 0, temp_len4 = 0;
-
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(DT_PROTOCOL, pBuf + 1,  &temp_len1);
+    NUM_2_ASCII_AT( DT_PROTOCOL, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
-    NUM_2_ASCII_AT(DT_EDITIOM_H, pBuf + temp_len1 + 2,  &temp_len2);
+    NUM_2_ASCII_AT( DT_EDITIOM_H, pBuf + temp_len1 + 2,  &temp_len2 );
     pBuf[temp_len1 + temp_len2 + 2] = '.';
-    NUM_2_ASCII_AT(DT_EDITIOM_L, pBuf + temp_len1 + temp_len2 + 3,  &temp_len3);
+    NUM_2_ASCII_AT( DT_EDITIOM_L, pBuf + temp_len1 + temp_len2 + 3,  &temp_len3 );
     pBuf[temp_len1 + temp_len2 + temp_len3 + 3] = ',';
-    NUM_2_ASCII_AT(DT_CUSTOM, pBuf + temp_len1 + temp_len2 + temp_len3 + 4,  &temp_len4);
+    NUM_2_ASCII_AT( DT_CUSTOM, pBuf + temp_len1 + temp_len2 + temp_len3 + 4,  &temp_len4 );
     pBuf[temp_len1 + temp_len2 + temp_len3 + temp_len4 + 4] = '\r';
-
-    drv_UartSend(pBuf,  temp_len1 + temp_len2 + temp_len3 + temp_len4 + 5);
-
+    drv_UartSend( pBuf,  temp_len1 + temp_len2 + temp_len3 + temp_len4 + 5 );
 }
 /**
 * @brief              读取CAC真实频道号
@@ -2152,25 +2086,23 @@ void DL2013_AFNF0_Fn101_AT_RIV(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFNF0_Fn102_AT_CACRC(INT8U *pBuf)
+void DL2013_AFNF0_Fn102_AT_CACRC( INT8U* pBuf )
 {
-
     INT8U len  = 0;
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT(mCAC.i1BigCH, pBuf + 1, &len);
+    NUM_2_ASCII_AT( mCAC.i1BigCH, pBuf + 1, &len );
     pBuf[len + 1] = '\r';
-    drv_UartSend(pBuf, len + 2);
-
+    drv_UartSend( pBuf, len + 2 );
 }
 
 
 
-            
 
-   
+
+
 
 /**
-* @brief           读取路径信息   
+* @brief           读取路径信息
                    0:读取0~4条路径
                    1：读取5~9条路径信息
                    2: 读取10~12条路径信息
@@ -2179,46 +2111,47 @@ void DL2013_AFNF0_Fn102_AT_CACRC(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/14
 */
-void DL2013_AFNF0_Fn106_AT_RRPI(INT8U *pBuf)
+void DL2013_AFNF0_Fn106_AT_RRPI( INT8U* pBuf )
 {
     INT16U i;
-    INT16U pNum;
+    INT16U pNum = 0;
     INT8U tUseNum;
     INT8U n;
-    INT8U dst_addr[6], path_channel;
-
-    ASCII_2_HEX_AT(pBuf + 8, dst_addr, 6);
-
-    ASCII_2_NUM_AT(pBuf + 21, (INT32U *)&path_channel,   1);
-    if(path_channel > 6)
+    INT8U dst_addr[6], path_channel, temp_len1, temp_len2;
+    ASCII_2_HEX_AT( pBuf + 8, dst_addr, 6 );
+    ASCII_2_NUM_U8_AT( pBuf + 21, &path_channel,   1 );
+    if( path_channel > 6 )
     {
         uart_Answer_ERROR();
         return;
     }
-
-
-    for(i = 0; i < MAX_DAU; i++)
+    for( i = 0; i < MAX_DAU; i++ )
     {
-        if(memcmp(mDAU[i].aDAddr, dst_addr, 6) == 0)
+        if( memcmp( mDAU[i].aDAddr, dst_addr, 6 ) == 0 )
         {
             pNum = i;    // 定位节点序号
             break;
         }
     }
-    
     // 待续 01 14
-
-    if(path_channel != 6)
+    // 地址，{，，，{地址六组}}*2
+    pBuf[0] = '\r';
+    HEX_2_ASCII_AT( dst_addr, pBuf + 1, 6 );
+    pBuf[13] = ',';
+    if( path_channel != 6 )
     {
-        for(n = 0; n < 2; n++)
-        {
-            mth_ReadmMath_AT(&(pBuf[7 + n * 39]), pNum, 2 * path_channel + n, &tUseNum);
-        }
+        mth_ReadmMath_AT( pBuf + 14, pNum, 2 * path_channel, &tUseNum, &temp_len1 );
+        pBuf[14 + temp_len1] = ',';
+        mth_ReadmMath_AT( pBuf + temp_len1 + 15, pNum, 2 * path_channel + 1, &tUseNum, &temp_len2 );
+        pBuf[15 + temp_len1 + temp_len2] = '\r';
+        drv_UartSend( pBuf, 16 + temp_len1  + temp_len2 );
     }
     else
-        mth_ReadmMath_AT(&(pBuf[7 + n * 39]), pNum, 12, &tUseNum);
-
-
+    {
+        mth_ReadmMath_AT( pBuf + 14, pNum, 12, &tUseNum, &temp_len1 );
+        pBuf[14 + temp_len1] = '\r';
+        drv_UartSend( pBuf, 15 + temp_len1 );
+    }
 }
 
 
@@ -2228,38 +2161,33 @@ void DL2013_AFNF0_Fn106_AT_RRPI(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFNF0_Fn201_AT_TTTH(INT8U *pBuf)
+void DL2013_AFNF0_Fn201_AT_TTTH( INT8U* pBuf )
 {
     INT16U i, j, len;
     INT8U flag_get_data = 0;
-
-    gDtHand *tHand = (gDtHand *)(mRf.aBuf);
+    gDtHand* tHand = ( gDtHand* )( mRf.aBuf );
     mRf.i1Com   = RF_DEV_HAND;
     mRf.i1Layer = 1;
-
     tHand->i1Com = 0x34;
     tHand->i1Len = 0;
-
-
-    for(i = 0 ; i < 3; i++)
+    for( i = 0 ; i < 3; i++ )
     {
-        if(pBuf[9 + i] == ',')
+        if( pBuf[9 + i] == ',' )
         {
-            ASCII_2_NUM_AT(&(pBuf[8]), (INT32U *)&len, i + 1);
-
-            if(len > 255)
+            ASCII_2_NUM_AT( &( pBuf[8] ), ( INT32U* )&len, i + 1 );
+            if( len > 255 )
             {
-                uart_Answer_ERRORn(ERROR_F0H_F210_AT_LEN_OVER_FLOW);
+                uart_Answer_ERRORn( ERROR_F0H_F210_AT_LEN_OVER_FLOW );
                 return;
             }
             else
             {
                 tHand->i1Len = len;
-                if(pBuf[10 + i + tHand->i1Len ] == '\r')
+                if( pBuf[10 + i + tHand->i1Len ] == '\r' )
                 {
-                  flag_get_data  = 1;
-                  break;
-                }  
+                    flag_get_data  = 1;
+                    break;
+                }
                 else
                 {
                     uart_Answer_ERROR();
@@ -2268,23 +2196,19 @@ void DL2013_AFNF0_Fn201_AT_TTTH(INT8U *pBuf)
             }
         }
     }
-    if(flag_get_data  == 0)
+    if( flag_get_data  == 0 )
     {
-          uart_Answer_ERROR();
-                    return;
+        uart_Answer_ERROR();
+        return;
     }
-
-
-    for(j = 0; j < tHand->i1Len; j++)
+    for( j = 0; j < tHand->i1Len; j++ )
     {
         tHand->aBuf[j] = pBuf[1 + j + 9];
     }
-
-    if(dl_RfStruct(mRf.BufTx, &mRf) == TRUE1)
+    if( dl_RfStruct( mRf.BufTx, &mRf ) == TRUE1 )
     {
-        drv_RfSend(mRf.BufTx, CH_TYPE_HAND);
+        drv_RfSend( mRf.BufTx, CH_TYPE_HAND );
     }
-
     uart_Answer_OK();
 }
 
@@ -2294,16 +2218,12 @@ void DL2013_AFNF0_Fn201_AT_TTTH(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/12
 */
-void AT_IPR_INFO(INT8U *pBuf)
+void AT_IPR_INFO( INT8U* pBuf )
 {
-
-
     pBuf[0] = '\r';
     pBuf[1] = '0' + AT_IPR_info ;
     pBuf[2] = '\r';
-    drv_UartSend(pBuf, 3);
-
-
+    drv_UartSend( pBuf, 3 );
 }
 /**
 * @brief            设置串口接收的波特率
@@ -2311,45 +2231,39 @@ void AT_IPR_INFO(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/12
 */
-void AT_IPR(INT8U *pBuf)
+void AT_IPR( INT8U* pBuf )
 {
-
-    if(pBuf[7] <= '6')
+    if( pBuf[7] <= '6' )
     {
         uart_Answer_OK();
-        sub_ax5043_delay(80);
+        sub_ax5043_delay( 80 );
     }
-
-    switch(pBuf[7])
+    switch( pBuf[7] )
     {
-    case '1':
-        sub_usart3_init( 4800, 8, 2 );
-        break;
-    case '2':
-        sub_usart3_init( 9600, 8, 2 );
-        break;
-    case '3':
-        sub_usart3_init( 14400, 8, 2 );
-        break;
-    case '4':
-        sub_usart3_init( 19200, 8, 2 );
-        break;
-    case '5':
-        sub_usart3_init( 38400, 8, 2 );
-        break;
-    case '6':
-        sub_usart3_init( 57600, 8, 2 );
-        break;
-
-    default:
-        uart_Answer_ERROR();
-        return;
-        break;
-
+        case '1':
+            sub_usart3_init( 4800, 8, 2 );
+            break;
+        case '2':
+            sub_usart3_init( 9600, 8, 2 );
+            break;
+        case '3':
+            sub_usart3_init( 14400, 8, 2 );
+            break;
+        case '4':
+            sub_usart3_init( 19200, 8, 2 );
+            break;
+        case '5':
+            sub_usart3_init( 38400, 8, 2 );
+            break;
+        case '6':
+            sub_usart3_init( 57600, 8, 2 );
+            break;
+        default:
+            uart_Answer_ERROR();
+            return;
+            break;
     }
     AT_IPR_info = pBuf[7] - '0';
-
-
 }
 
 /**
@@ -2359,7 +2273,7 @@ void AT_IPR(INT8U *pBuf)
 * @date       2018/01/14
 */
 
-void AT_W1(void) // 检测DAU的状态信息 命令幀
+void AT_W1( void ) // 检测DAU的状态信息 命令幀
 {
     INT8U Buf[35] = {0x22,
                      0x43, 0xcd,
@@ -2371,11 +2285,8 @@ void AT_W1(void) // 检测DAU的状态信息 命令幀
                      0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
                      0, 0, 0
                     };
-
-    drv_RfSend(Buf, CH_TYPE_TEST_0);
+    drv_RfSend( Buf, CH_TYPE_TEST_0 );
     uart_Answer_OK();
-
-
 }
 /**
 * @brief            检测DAU的状态信息 數據幀 点对点通讯
@@ -2383,7 +2294,7 @@ void AT_W1(void) // 检测DAU的状态信息 命令幀
 * @author       李晋南
 * @date       2018/01/14
 */
-void AT_W2(void) // 检测DAU的状态信息 數據幀
+void AT_W2( void ) // 检测DAU的状态信息 數據幀
 {
     INT8U Buf[35] = {0x22,
                      0x41, 0xcd,
@@ -2395,11 +2306,8 @@ void AT_W2(void) // 检测DAU的状态信息 數據幀
                      0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
                      1, 1, 0, 4
                     };
-
-    drv_RfSend(Buf, CH_TYPE_TEST_0);
+    drv_RfSend( Buf, CH_TYPE_TEST_0 );
     uart_Answer_OK();
-
-
 }
 
 /**
@@ -2408,7 +2316,7 @@ void AT_W2(void) // 检测DAU的状态信息 數據幀
 * @author       李晋南
 * @date       2018/01/14
 */
-void AT_W3(void) // 发送透传数据  点对点 數據幀
+void AT_W3( void ) // 发送透传数据  点对点 數據幀
 {
     INT8U Buf[41] = {0x28,
                      0x41, 0xcd,
@@ -2420,11 +2328,8 @@ void AT_W3(void) // 发送透传数据  点对点 數據幀
                      0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
                      1, 1, 0, 0x31, 5, 'a', 'b', 'c', 'd', 'e'
                     };
-
-    drv_RfSend(Buf, CH_TYPE_TEST_0);
+    drv_RfSend( Buf, CH_TYPE_TEST_0 );
     uart_Answer_OK();
-
-
 }
 
 /**
@@ -2433,7 +2338,7 @@ void AT_W3(void) // 发送透传数据  点对点 數據幀
 * @author       李晋南
 * @date       2018/01/14
 */
-void AT_TTD(INT8U *pBuf)
+void AT_TTD( INT8U* pBuf )
 {
     INT8U Buf[35] = {0x22,
                      0x41, 0xcd,
@@ -2445,32 +2350,27 @@ void AT_TTD(INT8U *pBuf)
                      0x0, 0x0, 0x0, 0x0, 0x0, 0x0, //  buf[19]
                      0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
                      1, 1, 0, 0x31
-                       // should add other , such as: datalen + data
+                     // should add other , such as: datalen + data
                     };
-
     INT8U dst_addr[6], *temp_buf;
     INT8U i, flag_get_data = 0;
     INT16U len;
-
-    if(*(pBuf + 19) != ',')
+    if( *( pBuf + 19 ) != ',' )
     {
         uart_Answer_ERROR();
         return;
     }
-
-    for(i = 0 ; i < 3; i++)
+    for( i = 0 ; i < 3; i++ )
     {
-        if(pBuf[21 + i] == ',')
+        if( pBuf[21 + i] == ',' )
         {
-
-            ASCII_2_NUM_AT(&(pBuf[20]), (INT32U *)&len, i + 1);
-
-            if(len > 255)
+            ASCII_2_NUM_AT( &( pBuf[20] ), ( INT32U* )&len, i + 1 );
+            if( len > 255 )
             {
                 uart_Answer_ERROR();
                 return;
             }
-            if(*(pBuf + len + i + 22) != '\r')
+            if( *( pBuf + len + i + 22 ) != '\r' )
             {
                 uart_Answer_ERROR();
                 return;
@@ -2479,30 +2379,22 @@ void AT_TTD(INT8U *pBuf)
             break;
         }
     }
-    if(flag_get_data == 0)
+    if( flag_get_data == 0 )
     {
-                uart_Answer_ERROR();
-                return;
+        uart_Answer_ERROR();
+        return;
     }
-
-    ASCII_2_HEX_AT(pBuf + 7, dst_addr, 6);
-
-    mem_cpy(Buf + 6, dst_addr, 6);
-    mem_cpy(Buf + 19, dst_addr, 6);
-
-   
-    temp_buf = ( INT8U *)malloc(len);
-    mem_cpy(temp_buf, pBuf + 22 + i , len);
-
-    mem_cpy(pBuf, Buf, 0x23);
-
+    ASCII_2_HEX_AT( pBuf + 7, dst_addr, 6 );
+    mem_cpy( Buf + 6, dst_addr, 6 );
+    mem_cpy( Buf + 19, dst_addr, 6 );
+    temp_buf = ( INT8U* )malloc( len );
+    mem_cpy( temp_buf, pBuf + 22 + i, len );
+    mem_cpy( pBuf, Buf, 0x23 );
     pBuf[0x23] = len;
-    mem_cpy(pBuf + 0x24, temp_buf, len);
-
-    pBuf[0] += (len + 1);
-
-    drv_RfSend(pBuf, CH_TYPE_TEST_0);
-    free(temp_buf);
+    mem_cpy( pBuf + 0x24, temp_buf, len );
+    pBuf[0] += ( len + 1 );
+    drv_RfSend( pBuf, CH_TYPE_TEST_0 );
+    free( temp_buf );
     uart_Answer_OK();
 }
 
@@ -2527,407 +2419,338 @@ void AT_TTD(INT8U *pBuf)
 * @author       李晋南
 * @date       2018/01/06
 */
-void DL2013_AT_function(INT8U *pBuf, INT16U pLen)
+void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
 {
-
-
-
-    if(pBuf[3] == '/')
+    if( pBuf[3] == '/' )
     {
-        mem_cpy(pBuf, AT_Save_Last_Cmd_Buf, AT_Save_Last_Cmd_Buf_Len);
+        mem_cpy( pBuf, AT_Save_Last_Cmd_Buf, AT_Save_Last_Cmd_Buf_Len );
         pLen =  AT_Save_Last_Cmd_Buf_Len ;
-
     }
     else
     {
-        memset(AT_Save_Last_Cmd_Buf, 0, sizeof(AT_Save_Last_Cmd_Buf));
+        memset( AT_Save_Last_Cmd_Buf, 0, sizeof( AT_Save_Last_Cmd_Buf ) );
         AT_Save_Last_Cmd_Buf_Len = pLen;
-        mem_cpy(AT_Save_Last_Cmd_Buf, pBuf, AT_Save_Last_Cmd_Buf_Len);
+        mem_cpy( AT_Save_Last_Cmd_Buf, pBuf, AT_Save_Last_Cmd_Buf_Len );
     }
-
-
-
-    switch(pBuf[3])
+    switch( pBuf[3] )
     {
-    case 'A':
-
-        if(memcmp(pBuf + 4, "REG=", 4) == 0)
-        {
-            DL2013_AFN10_Fn6_AT_AREG(pBuf);
-            return;
-        }
-
-        break;
-
-    case 'B':
-    {
-
-        if(memcmp(pBuf + 4, "RDDT?\r", 6) == 0)
-        {
-            DL2013_AFN03_Fn9_AT_BRDDT(pBuf);
-            return;
-        }
-
-    }
-
-    break;
-
-    case 'C':
-    {
-
-        if(memcmp(pBuf + 4, "ACRC?\r", 6) == 0)
-        {
-            DL2013_AFNF0_Fn102_AT_CACRC(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "ACS?", 4) == 0)
-        {
-            DL2013_AFNF0_Fn1_AT_CACS(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "ACV=", 4) == 0)
-        {
-            DL2013_AFNF0_Fn100_AT_CACV(pBuf);
-            return;
-        }
-
-    }
-    break;
-    case 'D':
-
-        break;
-    case 'G':
-        if((memcmp(pBuf + 4, "CLK=", 4) == 0) && (pBuf[14] == '\r'))
-        {
-            //dai  DL2013_AFN14_Fn2_AT_GCLK(pBuf);
-            // return;
-        }
-
-        break;
-    case 'H':
-    {
-
-        switch(pBuf[4])
-        {
-        case 'I':
-            if(memcmp(pBuf + 5, "NT\r", 3) == 0)
+        case 'A':
+            if( memcmp( pBuf + 4, "REG=", 4 ) == 0 )
             {
-                DL2013_AFN01_Fn1_AT_HINT();
+                DL2013_AFN10_Fn6_AT_AREG( pBuf );
                 return;
             }
             break;
-
+        case 'B':
+        {
+            if( memcmp( pBuf + 4, "RDDT?\r", 6 ) == 0 )
+            {
+                DL2013_AFN03_Fn9_AT_BRDDT( pBuf );
+                return;
+            }
+        }
+        break;
+        case 'C':
+        {
+            if( memcmp( pBuf + 4, "ACRC?\r", 6 ) == 0 )
+            {
+                DL2013_AFNF0_Fn102_AT_CACRC( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "ACS?", 4 ) == 0 )
+            {
+                DL2013_AFNF0_Fn1_AT_CACS( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "ACV=", 4 ) == 0 )
+            {
+                DL2013_AFNF0_Fn100_AT_CACV( pBuf );
+                return;
+            }
+        }
+        break;
+        case 'D':
+            break;
+        case 'G':
+            if( ( memcmp( pBuf + 4, "CLK=", 4 ) == 0 ) && ( pBuf[14] == '\r' ) )
+            {
+                //dai  DL2013_AFN14_Fn2_AT_GCLK(pBuf);
+                // return;
+            }
+            break;
+        case 'H':
+        {
+            switch( pBuf[4] )
+            {
+                case 'I':
+                    if( memcmp( pBuf + 5, "NT\r", 3 ) == 0 )
+                    {
+                        DL2013_AFN01_Fn1_AT_HINT();
+                        return;
+                    }
+                    break;
+                case 'N':
+                    if( memcmp( pBuf + 5, "A?\r", 3 ) == 0 )
+                    {
+                        DL2013_AFN03_Fn4_AT_HNA( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "A=", 2 ) == 0 ) && ( pBuf[19] == '\r' ) )
+                    {
+                        DL2013_AFN05_Fn1_AT_HNA( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "CP?\r", 4 ) == 0 ) )
+                    {
+                        DL2013_AFN03_Fn8_AT_HNCP( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "CP=", 3 ) == 0 ) )
+                    {
+                        DL2013_AFN05_Fn5_AT_HNCP( pBuf );
+                        return;
+                    }
+                    break;
+            }
+        }
+        break;
+        case  'I':
+            if( ( memcmp( pBuf + 4, "PR=", 3 ) == 0 ) && ( pBuf[8] == '\r' ) )
+            {
+                AT_IPR( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "PR?\r", 4 ) == 0 )
+            {
+                AT_IPR_INFO( pBuf );
+                return;
+            }
+            break;
+        case 'M':
+        {
+            if( memcmp( pBuf + 4, "VINFO?\r", 7 ) == 0 )
+            {
+                DL2013_AFN03_Fn1_AT_MVINFO( pBuf );
+                return;
+            }
+        }
+        break;
         case 'N':
-            if(memcmp(pBuf + 5, "A?\r", 3) == 0)
-            {
-                DL2013_AFN03_Fn4_AT_HNA(pBuf);
-                return;
-            }
-            else if((memcmp(pBuf + 5, "A=", 2) == 0) && (pBuf[19] == '\r'))
-            {
-                DL2013_AFN05_Fn1_AT_HNA(pBuf);
-                return;
-            }
-            else if((memcmp(pBuf + 5, "CP?\r", 4) == 0))
-            {
-                DL2013_AFN03_Fn8_AT_HNCP(pBuf);
-                return;
-            }
-            else if((memcmp(pBuf + 5, "CP=", 3) == 0))
-            {
-                DL2013_AFN05_Fn5_AT_HNCP(pBuf);
-                return;
-            }
-
-
-            break;
-        }
-
-    }
-
-    break;
-
-    case  'I':
-
-
-        if((memcmp(pBuf + 4, "PR=", 3) == 0) && (pBuf[8] == '\r'))
         {
-            AT_IPR(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "PR?\r", 4) == 0)
-        {
-            AT_IPR_INFO(pBuf);
-            return;
+            if( memcmp( pBuf + 4, "NUM?\r", 5 ) == 0 )
+            {
+                DL2013_AFN10_Fn1_AT_NNUM( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "MMT?\r", 5 ) == 0 )
+            {
+                DL2013_AFN03_Fn7_AT_NMMT( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "MMT=", 4 ) == 0 )
+            {
+                DL2013_AFN05_Fn4_AT_NMMT( pBuf );
+                return;
+            }
+            else if( ( memcmp( pBuf + 4, "EREP=", 5 ) == 0 ) && ( pBuf[10] == '\r' ) )
+            {
+                DL2013_AFN05_Fn2_AT_NEREP( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "RC\r", 3 ) == 0 )
+            {
+                DL2013_AFN04_Fn2_AT_NRC();
+                return;
+            }
+            else if( memcmp( pBuf + 4, "ADD=", 4 ) == 0 )
+            {
+                DL2013_AFN11_Fn1_NADD( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "DEL=", 4 ) == 0 )
+            {
+                DL2013_AFN11_Fn2_NDEL( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "INFO=", 5 ) == 0 )
+            {
+                DL2013_AFN10_Fn2_AT_NINFO( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "LST=", 4 ) == 0 )
+            {
+                DL2013_AFN10_Fn5_AT_NLST( pBuf );
+                return;
+            }
+            else if( memcmp( pBuf + 4, "PWR?", 4 ) == 0 )
+            {
+                DL2013_AFN10_Fn101_AT_NPWR( pBuf );
+                return;
+            }
         }
         break;
-
-
-
-    case 'M':
-    {
-        if(memcmp(pBuf + 4, "VINFO?\r", 7) == 0)
+        case 'P':
         {
-            DL2013_AFN03_Fn1_AT_MVINFO(pBuf);
-            return;
+            if( memcmp( pBuf + 4, "INT\r", 4 ) == 0 )
+            {
+                DL2013_AFN01_Fn2_F3_AT_PINT();
+                return;
+            }
         }
-    }
-    break;
-    case 'N':
-    {
-        if(memcmp(pBuf + 4, "NUM?\r", 5) == 0)
+        break;
+        case 'R':
         {
-            DL2013_AFN10_Fn1_AT_NNUM(pBuf);
-            return;
+            switch( pBuf[4] )
+            {
+                case 'S':
+                {
+                    if( memcmp( pBuf + 5, "SIT?\r", 5 ) == 0 ) // 查询场强门限
+                    {
+                        DL2013_AFN03_Fn100_AT_RSSIT( pBuf );
+                        return;
+                    }
+                    else  if( ( memcmp( pBuf + 5, "SIT=", 4 ) == 0 ) && ( ( pBuf[12] == '\r' ) || ( pBuf[11] == '\r' ) ) ) // 设置场强门限
+                    {
+                        DL2013_AFN05_Fn100_AT_RSSIT( pBuf );
+                        return;
+                    }
+                }
+                break;
+                case 'I':
+                {
+                    if( memcmp( pBuf + 5, "V?\r", 3 ) == 0 ) // 查询内部版本号
+                    {
+                        DL2013_AFNF0_Fn101_AT_RIV( pBuf );
+                        return;
+                    }
+                }
+                break;
+                case 'R':
+                {
+                    if( ( memcmp( pBuf + 5, "PI=", 3 ) == 0 ) && ( pBuf[20] == ',' ) && ( pBuf[22] == '\r' ) ) // 查询内部版本号
+                    {
+                        DL2013_AFNF0_Fn106_AT_RRPI( pBuf );
+                        return;
+                    }
+                }
+                break;
+                case 'A':
+                {
+                    if( memcmp( pBuf + 5, "R?\r", 3 ) == 0 ) // 读取档案
+                    {
+                        DL2013_AFN0A_Fn52_AT_RAR( pBuf );
+                        return;
+                    }
+                }
+                break;
+                case 'T':
+                {
+                    if( memcmp( pBuf + 5, "C?\r", 3 ) == 0 ) // 查询中心节点时间
+                    {
+                        DL2013_AFN03_Fn101_AT_RTC( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "C=", 2 ) == 0 ) && ( pBuf[19] == '\r' ) ) // 设置中心节点时间
+                    {
+                        DL2013_AFN05_Fn101_AT_RTC( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "MT\r", 3 ) == 0 ) ) // 启动维护
+                    {
+                        DL2013_AFN11_Fn101_AT_RTMT( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "RS\r", 3 ) == 0 ) ) // 启动组网
+                    {
+                        DL2013_AFN11_Fn102_AT_RTMS( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "ST?\r", 4 ) == 0 ) ) // 查询路由运行状态
+                    {
+                        DL2013_AFN10_Fn4_AT_RTST( pBuf );
+                        return;
+                    }
+                    else if( ( memcmp( pBuf + 5, "MN=", 3 ) == 0 ) ) // 启动维护
+                    {
+                        DL2013_AFN03_Fn1_F101_AT_RTMN( pBuf );
+                        return;
+                    }
+                }
+                break;
+            }
         }
-        else if(memcmp(pBuf + 4, "MMT?\r", 5) == 0)
-        {
-            DL2013_AFN03_Fn7_AT_NMMT(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "MMT=", 4) == 0)
-        {
-            DL2013_AFN05_Fn4_AT_NMMT(pBuf);
-            return;
-        }
-        else if((memcmp(pBuf + 4, "EREP=", 5) == 0) && (pBuf[10] == '\r'))
-        {
-            DL2013_AFN05_Fn2_AT_NEREP(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "RC\r", 3) == 0)
-        {
-            DL2013_AFN04_Fn2_AT_NRC();
-            return;
-        }
-        else if(memcmp(pBuf + 4, "ADD=", 4) == 0)
-        {
-            DL2013_AFN11_Fn1_NADD(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "DEL=", 4) == 0)
-        {
-            DL2013_AFN11_Fn2_NDEL(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "INFO=", 5) == 0)
-        {
-            DL2013_AFN10_Fn2_AT_NINFO(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "LST=", 4) == 0)
-        {
-            DL2013_AFN10_Fn5_AT_NLST(pBuf);
-            return;
-        }
-        else if(memcmp(pBuf + 4, "PWR?", 4) == 0)
-        {
-            DL2013_AFN10_Fn101_AT_NPWR(pBuf);
-            return;
-        }
-
-
-
-
-
-    }
-
-
-
-    break;
-    case 'P':
-    {
-        if(memcmp(pBuf + 4, "INT\r", 4) == 0)
-        {
-            DL2013_AFN01_Fn2_F3_AT_PINT();
-            return;
-
-        }
-
-    }
-    break;
-    case 'R':
-    {
-
-        switch(pBuf[4])
-        {
+        break;
         case 'S':
         {
-            if(memcmp(pBuf + 5, "SIT?\r", 5) == 0) // 查询场强门限
+            if( memcmp( pBuf + 4, "SCL?\r", 5 ) == 0 ) //查询网络规模
             {
-                DL2013_AFN03_Fn100_AT_RSSIT(pBuf);
+                DL2013_AFN10_Fn100_AT_SSSL( pBuf );
                 return;
             }
-            else  if((memcmp(pBuf + 5, "SIT=", 4) == 0) && ((pBuf[12] == '\r') || (pBuf[11] == '\r')))   // 设置场强门限
+            else if( ( memcmp( pBuf + 4, "SCL=", 4 ) == 0 ) )
             {
-                DL2013_AFN05_Fn100_AT_RSSIT(pBuf);
+                DL2013_AFN11_Fn100_AT_SSSL( pBuf );
                 return;
             }
-
-        }
-        break;
-        case 'I':
-        {
-            if(memcmp(pBuf + 5, "V?\r", 3) == 0) // 查询内部版本号
+            else if( ( memcmp( pBuf + 4, "CCR?\r", 5 ) == 0 ) ) // 查看状态字和通信速率
             {
-                DL2013_AFNF0_Fn101_AT_RIV(pBuf);
+                DL2013_AFN03_Fn5_AT_SCCR( pBuf );
                 return;
             }
-
-        }
-        break;
-                case 'R':
-        {
-            if((memcmp(pBuf + 5, "PI=", 3) == 0)&&(pBuf[20] == ',') && (pBuf[22] == '\r')) // 查询内部版本号
+            else if( ( memcmp( pBuf + 4, "BRD=12,", 7 ) == 0 ) && ( pBuf[23] == '\r' ) ) // 广播校时
             {
-                DL2013_AFNF0_Fn106_AT_RRPI(pBuf);
-                return;
-            }
-
-        }
-        break;
-        
-        case 'A':
-        {
-            if(memcmp(pBuf + 5, "R?\r", 3) == 0) // 读取档案
-            {
-                DL2013_AFN0A_Fn52_AT_RAR(pBuf);
+                DL2013_AFN05_Fn3_AT_SBRD( pBuf );
                 return;
             }
         }
-
         break;
-
-
-
         case 'T':
         {
-            if(memcmp(pBuf + 5, "C?\r", 3) == 0) // 查询中心节点时间
+            if( memcmp( pBuf + 4, "SST=", 4 ) == 0 ) //查询网络规模
             {
-                DL2013_AFN03_Fn101_AT_RTC(pBuf);
+                DL2013_AFN04_Fn1_AT_TSST( pBuf );
                 return;
             }
-            else if((memcmp(pBuf + 5, "C=", 2) == 0) && (pBuf[19] == '\r'))   // 设置中心节点时间
+            else if( ( memcmp( pBuf + 4, "TTH=", 4 ) == 0 ) ) // 数据透传到掌机
             {
-                DL2013_AFN05_Fn101_AT_RTC(pBuf);
+                DL2013_AFNF0_Fn201_AT_TTTH( pBuf );
                 return;
             }
-            else if((memcmp(pBuf + 5, "MT\r", 3) == 0))    // 启动维护
+            else if( ( memcmp( pBuf + 4, "TD=", 3 ) == 0 ) ) // 数据透传到掌机
             {
-                DL2013_AFN11_Fn101_AT_RTMN(pBuf);
+                AT_TTD( pBuf );
                 return;
             }
-            else if((memcmp(pBuf + 5, "RS\r", 3) == 0))    // 启动组网
-            {
-                DL2013_AFN11_Fn102_AT_RTMS(pBuf);
-                return;
-            }
-            else if((memcmp(pBuf + 5, "ST?\r", 4) == 0))    // 查询路由运行状态
-            {
-                DL2013_AFN10_Fn4_AT_RTST(pBuf);
-                return;
-            }
-
-
         }
-
         break;
-
-
-        }
-
-    }
-
-    break;
-    case 'S':
-    {
-        if(memcmp(pBuf + 4, "SCL?\r", 5) == 0)  //查询网络规模
+        case 'W':
+            if( memcmp( pBuf + 4, "1\r", 2 ) == 0 ) //命令幀 点对点测试
+            {
+                AT_W1();
+                return;
+            }
+            else  if( memcmp( pBuf + 4, "2\r", 2 ) == 0 )   //數據幀 点对点测试
+            {
+                AT_W2();
+                return;
+            }
+            else  if( memcmp( pBuf + 4, "3\r", 2 ) == 0 ) //數據幀 点对点测试
+            {
+                AT_W3();
+                return;
+            }
+            break;
+        case '?':
         {
-            DL2013_AFN10_Fn100_AT_SSSL(pBuf);
-            return;
-
+            if( memcmp( pBuf + 4, "\r", 1 ) == 0 )
+            {
+                uart_Answer_AT();
+                return;
+            }
         }
-        else if((memcmp(pBuf + 4, "SCL=", 4) == 0))
-        {
-            DL2013_AFN11_Fn100_AT_SSSL(pBuf);
-            return;
-        }
-        else if((memcmp(pBuf + 4, "CCR?\r", 5) == 0))     // 查看状态字和通信速率
-        {
-            DL2013_AFN03_Fn5_AT_SCCR(pBuf);
-            return;
-        }
-        else if((memcmp(pBuf + 4, "BRD=", 4) == 0))     // 广播
-        {
-            DL2013_AFN05_Fn3_AT_SBRD(pBuf);
-            return;
-        }
-
-
-    }
-
-    break;
-    case 'T':
-    {
-        if(memcmp(pBuf + 4, "SST=", 4) == 0)  //查询网络规模
-        {
-            DL2013_AFN04_Fn1_AT_TSST(pBuf);
-            return;
-
-        }
-        else if((memcmp(pBuf + 4, "TTH=", 4) == 0))     // 数据透传到掌机
-        {
-            DL2013_AFNF0_Fn201_AT_TTTH(pBuf);
-            return;
-        }
-        else if((memcmp(pBuf + 4, "TD=", 3) == 0))     // 数据透传到掌机
-        {
-            AT_TTD(pBuf);
-            return;
-        }
-
-
-
-    }
-
-    break;
-
-    case 'W':
-        if(memcmp(pBuf + 4, "1\r", 2) == 0)   //命令幀 点对点测试
-        {
-            AT_W1();
-            return;
-
-        }
-        else  if(memcmp(pBuf + 4, "2\r", 2) == 0)       //數據幀 点对点测试
-        {
-            AT_W2();
-            return;
-
-        }
-        else  if(memcmp(pBuf + 4, "3\r", 2) == 0)     //數據幀 点对点测试
-        {
-            AT_W3();
-            return;
-
-        }
-
         break;
-    case '?':
-    {
-        if(memcmp(pBuf + 4, "\r", 1) == 0)
-        {
-            uart_Answer_AT();
-            return;
-        }
+        default:
+            break;
     }
-    break;
-    default:
-
-        break;
-
-    }
-
     uart_Answer_Invalid_Command();
-
 }
