@@ -11,7 +11,7 @@ extern INT8U        FlagNew;                                                    
 
 INT16U      xb_Capacity( INT16U pN );
 INT8U   AT_Save_Last_Cmd_Buf[LEN_RF], AT_Save_Last_Cmd_Buf_Len = 0;
-INT8U   AT_IPR_info = 2;
+INT8U   AT_IPR_info = 2; // 波特率数值
 
 
 
@@ -502,10 +502,13 @@ void DL2013_AFN03_Fn1_AT_MVINFO( INT8U* pBuf )
     temp_buf[0] = DT_EDITIOM_L;
     HEX_2_ASCII_AT( temp_buf, pBuf + i, 1 );
     i += 2;
+    pBuf[i++] = ',';
+    temp_buf[0] = HARD_VERSION_AT;
+    HEX_2_ASCII_AT( temp_buf, pBuf + i, 1 );
+    i += 2;
     pBuf[i++] = '\r';
     drv_UartSend( pBuf, i );
 }
-
 
 /**
 * @brief    查询主节点地址
@@ -544,7 +547,6 @@ void DL2013_AFN03_Fn5_AT_SCCR( INT8U* pBuf )
     // 返回数据
     drv_UartSend( pBuf, temp_len1 + 2 );
 }
-
 
 /**
 * @brief      读取从节点监控最大超时时间
@@ -593,9 +595,8 @@ void DL2013_AFN03_Fn9_AT_BRDDT( INT8U* pBuf )
     pBuf[0] = '\r';
     NUM_2_ASCII_AT( DelayTime, pBuf + 1,  &temp_len1 ); //  广播延时根据时隙计算
     pBuf[temp_len1 + 1] = '\r';
-    drv_UartSend( pBuf, temp_len1 + 2 );
+    drv_UartSend( pBuf, temp_len1 + 2);
 }
-
 
 
 /*
@@ -762,6 +763,7 @@ void DL2013_AFN03_Fn101_AT_RTC( INT8U* pBuf )
 }
 
 
+
 /**
 * @brief         链路接口发送测试
 * @param[in]  pBuf 接收和发送数据缓存数据指针
@@ -772,6 +774,22 @@ void DL2013_AFN04_Fn1_AT_TSST( INT8U* pBuf )
 {
     INT16U timeout = 0;
     INT8U  i;
+    
+    
+    INT8U Buf[35] = {0x22,
+                     0x41, 0xcd,
+                     0x0f,
+                     0xff, 0xff, // panid
+                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // buf[6]
+                     0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, // cac addr  12
+                     0x3c,
+                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, //  buf[19]
+                     0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, // car addr 25
+                     1, 1, 0, 0x31
+                     // should add other , such as: datalen + data
+                    };
+    INT8U  temp_buf[13];
+    
     for( i = 0 ; i < 5; i++ )
     {
         if( pBuf[9 + i] == '\r' )
@@ -787,12 +805,27 @@ void DL2013_AFN04_Fn1_AT_TSST( INT8U* pBuf )
                 uart_Answer_ERRORn( ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
-            drv_SendTest( timeout, mCAC.i1BigCH );
-            uart_Answer_OK();
-            return;
+            break;
         }
     }
-    uart_Answer_ERROR();
+    
+    mem_cpy( Buf + 12, mCAC.aCAddr, 6 );
+    mem_cpy( Buf + 25, mCAC.aCAddr, 6 );
+    temp_buf[0] = 12;
+    HEX_2_ASCII_AT(mCAC.aCAddr,temp_buf + 1,6);
+    mem_cpy( pBuf, Buf, 0x23 );
+    mem_cpy( pBuf + 0x23, temp_buf, 13);
+    pBuf[0] += 13;
+    
+    
+    for(i=0;i<timeout;i++)
+    {
+        drv_stm32WDT();
+        drv_RfSend( pBuf, CH_TYPE_TEST_0 );
+        drv_Delay10ms(100);
+    }
+    
+    uart_Answer_OK();
 }
 
 
@@ -1648,7 +1681,7 @@ void DL2013_AFN11_Fn1_NADD( INT8U* pBuf )
         uart_Answer_ERROR();
         return;
     }
-    if( node_num <= 30 )
+    if( node_num <= 20 )
     {
         for( i = 0; i < node_num; i++ )                                                              // 循环添加DAU
         {
@@ -1705,7 +1738,7 @@ void DL2013_AFN11_Fn2_NDEL( INT8U* pBuf )
         uart_Answer_ERROR();
         return;
     }
-    if( node_num <= 30 )
+    if( node_num <= 20 )
     {
         for( i = 0; i < node_num; i++ )                                                                          //  循环删除DAU
         {
@@ -2332,6 +2365,9 @@ void AT_W3( void ) // 发送透传数据  点对点 數據幀
     uart_Answer_OK();
 }
 
+
+
+
 /**
 * @brief            发送透传数据   兼容点对点及路由模式
 * @param[in]  pBuf 接收和发送数据缓存数据指针
@@ -2706,7 +2742,7 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
         break;
         case 'T':
         {
-            if( memcmp( pBuf + 4, "SST=", 4 ) == 0 ) //查询网络规模
+            if( memcmp( pBuf + 4, "SST=", 4 ) == 0 ) // 发送测试命令
             {
                 DL2013_AFN04_Fn1_AT_TSST( pBuf );
                 return;
