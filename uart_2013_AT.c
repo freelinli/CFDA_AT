@@ -1605,6 +1605,9 @@ void DL2013_AFN10_Fn101_AT_NPWR( INT8U* pBuf )
 #endif
             pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
             pBuf[pBuf_index ++] = ',';
+            if(mDAU[i].aDProType[1] > 2)
+             mDAU[i].aDProType[1] = 2;
+             
             pBuf[pBuf_index ++] = '0' + ( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
             pBuf[pBuf_index ++] = ',';
             version_h      = ( TRUE1 == dauF_Good( i ) ) ? mDAU[i].aDVersion[0]    : 0;
