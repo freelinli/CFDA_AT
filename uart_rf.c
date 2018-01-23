@@ -31,13 +31,13 @@ void tsk_uart()
 void TSST_AT( INT8U* buf )
 {
     INT8U tsst_cmp_buf[5] = { 0x41, 0xcd, 0x0f, 0xff, 0xff };
-    INT8U Send_Buf[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     if( memcmp( tsst_cmp_buf, buf, 5 ) == 0 )
     {
-        if( ( buf[33] == 0x31 ) && ( buf[34] == 0x0C ) )
+        if( buf[33] == 0x31  )
         {
-            memcpy( Send_Buf, buf + 35,  12 );
-            drv_UartSend( Send_Buf, 12 );
+          
+            drv_UartSend( buf + 35, buf[34] );
+ 
         }
     }
 }

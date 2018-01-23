@@ -342,7 +342,7 @@ void uart_Answer_ERRORn( INT8U num )
 
 void uart_Answer_AT( void )
 {
-    drv_UartSend( "\rAT:1\r", 5 ); // AT: 1  1 AT指令版本号
+    drv_UartSend( "\rAT:1\r", 6 ); // AT: 1  1 AT指令版本号
 }
 /**
 * @brief   硬件初始化，CAC复位
@@ -383,34 +383,34 @@ void DL2013_AFN01_Fn2_F3_AT_PINT( void )
 void DL2013_AFN03_Fn1_F101_AT_RTMN( INT8U* pBuf ) 
 {
     INT16U len;
-    INT8U Dau_Addr[6], protocol_type, cmd_type, *Get645_data;
+    INT8U Dau_Addr[6], protocol_type, *Get645_data;
     INT8U  i, flag_get_all_num;
     INT16U tmpDAUNum = 0;
-    INT8U tmpFrameType = 0;
-    if( ( pBuf[20] != ',' ) || ( pBuf[22] != ',' ) || ( pBuf[24] != ',' ) )
+  //  INT8U tmpFrameType = 0;
+    if( ( pBuf[20] != ',' ) || ( pBuf[22] != ',' ) )
     {
         uart_Answer_ERROR();
         return;
     }
     for( i = 0 ; i < 4; i++ )
     {
-        if( pBuf[26 + i] == ',' )
+        if( pBuf[24 + i] == ',' )
         {
-            ASCII_2_NUM_U16_AT( pBuf + 25, &len, i + 1 );
+            ASCII_2_NUM_U16_AT( pBuf + 23, &len, i + 1 );
             if( len > 200 )
             {
                 uart_Answer_ERROR();
                 return;
             }
             flag_get_all_num   = 1;
-            if( pBuf[27 + i + len] == '\r' )
+            if( pBuf[25 + i + len] == '\r' )
             {
                 if( flag_get_all_num == 1 )
                 {
                     flag_get_all_num = 2;
                 }
                 Get645_data = malloc( len );
-                mem_cpy( Get645_data, pBuf + 27 + i, len );
+                mem_cpy( Get645_data, pBuf + 25 + i, len );
                 break;
             }
         }
@@ -422,7 +422,7 @@ void DL2013_AFN03_Fn1_F101_AT_RTMN( INT8U* pBuf )
     }
     ASCII_2_HEX_AT( pBuf + 8,      Dau_Addr,       6 );
     ASCII_2_NUM_U8_AT( pBuf + 21,  &protocol_type,   1 );
-    ASCII_2_NUM_U8_AT( pBuf + 23,  &cmd_type,        1 );
+ //   ASCII_2_NUM_U8_AT( pBuf + 23,  &cmd_type,        1 );
     if( protocol_type == 0 )
     {
         backMeter = 1;
@@ -451,19 +451,10 @@ void DL2013_AFN03_Fn1_F101_AT_RTMN( INT8U* pBuf )
         uart_Answer_ERROR(); // 需改动为其他错误码  //  返回不在网
         return ;
     }
-    //  若为透传命令
-    if( cmd_type == 0x00 )
-    {
-        //  更新DAU协议类型
-        mDAU[tmpDAUNum].aDProType[0] = Get645FrameType( Get645_data );
-    }
-    //  若有协议字段
-    else
-    {
-        //  解析报文帧类型
-        tmpFrameType = Get645FrameType( Get645_data );
-        mDAU[tmpDAUNum].aDProType[0] = tmpFrameType;
-    }
+    
+    mDAU[tmpDAUNum].aDProType[0] = Get645FrameType( Get645_data );
+    
+    
     // drv_Printf("\n==============================启动抄表=============================");
     if( protocol_type == 0 )
     {
@@ -540,7 +531,7 @@ void DL2013_AFN03_Fn5_AT_SCCR( INT8U* pBuf )
     //  通信速率数量 =  1（0001b）
     //  pBuf[1] 高四位备用，低四位信道数量
     status_world[0] = 0x41; //
-    status_world[1] = 0x1f; //  信道实际数量32
+    status_world[1] = 0x0B; //  信道实际数量11
     pBuf[0] = '\r';
     NUM_2_ASCII_AT( status_world[1], pBuf + 1, &temp_len1 ); //信道实际数量
     pBuf[temp_len1 + 1] = '\r';
@@ -1219,7 +1210,7 @@ void DL2013_AFN10_Fn2_AT_NINFO( INT8U* pBuf )
     {
         if( pBuf[9 + i] == ',' )
         {
-            ASCII_2_NUM_U16_AT( pBuf + 8, &start_serial_number, i + 1 );
+            ASCII_2_NUM_U16_AT( pBuf + 9, &start_serial_number, i );
             serial_number_len = i + 1;
             flag_get_all_num   = 1;
         }
@@ -1297,10 +1288,10 @@ void DL2013_AFN10_Fn2_AT_NINFO( INT8U* pBuf )
         }
         else
         {
-            NUM_2_ASCII_AT( tN2, pBuf + 1,  &temp_len1 );
+            NUM_2_ASCII_AT( tN2, pBuf + 1,  &temp_len1);
         }
     }
-    else  if( temp_len1 == 1 )
+    else  if( temp_len1 == 1)
     {
         pBuf[1] = '0' + tN2;
     }
@@ -1322,6 +1313,10 @@ void DL2013_AFN10_Fn2_AT_NINFO( INT8U* pBuf )
 void DL2013_AFN10_Fn4_AT_RTST( INT8U* pBuf )
 {
     INT8U temp_len1, temp_len2, work_switch = 0;
+    
+    //  写节点数量信息
+    cac_CountDAU();         
+    
     pBuf[0] = '\r';
     // 组网节点个数
     NUM_2_ASCII_AT( mCAC.i2DownDAU, pBuf + 1,  &temp_len1 );
@@ -1330,6 +1325,7 @@ void DL2013_AFN10_Fn4_AT_RTST( INT8U* pBuf )
     NUM_2_ASCII_AT( mCAC.i2GoodDAU, pBuf + temp_len1 + 2,  &temp_len2 );
     pBuf[temp_len1 + temp_len2 + 2] = ',';
     //  写工作开关格式
+
     if( mCAC.bYuLi == TRUE1 )                                                                               //  搜表
     {
         work_switch += 2;
@@ -1343,7 +1339,6 @@ void DL2013_AFN10_Fn4_AT_RTST( INT8U* pBuf )
     // 返回数据
     drv_UartSend( pBuf, temp_len1 + temp_len2 + 5 );
 }
-
 
 
 /**
@@ -1620,7 +1615,7 @@ void DL2013_AFN10_Fn101_AT_NPWR( INT8U* pBuf )
             pBuf[pBuf_index ++] = ',';
             tN2++;                                                                    // 节点计数tN2加1
         }
-        if( tN2 >= li2LastNum  ||  tN2 >= 20 )                                      // 若tN2满20或剩余总数，串口输出
+        if( tN2 >= li2LastNum  ||  tN2 >= 15 )                                      // 若tN2满20或剩余总数，串口输出
         {
             pBuf[temp_len1 + 2] = tN2 / 10 + '0'; //本次传输的节点个数      -             十位
             pBuf[temp_len1 + 3] = tN2 % 10 + '0'; //本次传输的节点个数      -             个位
@@ -1684,7 +1679,7 @@ void DL2013_AFN11_Fn1_NADD( INT8U* pBuf )
         uart_Answer_ERROR();
         return;
     }
-    if( node_num <= 20 )
+    if( node_num <= 15 )
     {
         for( i = 0; i < node_num; i++ )                                                              // 循环添加DAU
         {
@@ -1741,7 +1736,7 @@ void DL2013_AFN11_Fn2_NDEL( INT8U* pBuf )
         uart_Answer_ERROR();
         return;
     }
-    if( node_num <= 20 )
+    if( node_num <= 15 )
     {
         for( i = 0; i < node_num; i++ )                                                                          //  循环删除DAU
         {
@@ -1833,18 +1828,21 @@ void DL2013_AFN11_Fn101_AT_RTMT( INT8U* pBuf )
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn102_AT_RTMS( INT8U* pBuf )
+void DL2013_AFN11_Fn102_AT_RTRS( INT8U* pBuf )
 {
+    // 返回确认
+    uart_Answer_OK();
+      
     // 保存档案
     cac_SaveAll();
+    
     // 若没有组网
     if( FALSE0 == mCAC.bSetup )
     {
         // 需要组网
         set_setup_son();
     }
-    // 返回确认
-    uart_Answer_OK();
+
 }
 
 
@@ -1993,7 +1991,7 @@ void DL2013_AFN0A_Fn52_AT_RAR( INT8U* pBuf )
             addr_buf[pBuf_index ++] =  ',';
         }
         tN++;
-        if( tN >= 30 )
+        if( tN >= 15 )
         {
             pBuf[0] = '\r';
             NUM_2_ASCII_AT( tTop, pBuf + 1,  &temp_len1 );
@@ -2438,11 +2436,7 @@ void AT_TTD( INT8U* pBuf )
 }
 
 
-
-
 //-------------------------------------------------------------------------------------------------------------------------//
-
-
 
 
 /**
@@ -2701,7 +2695,7 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
                     }
                     else if( ( memcmp( pBuf + 5, "RS\r", 3 ) == 0 ) ) // 启动组网
                     {
-                        DL2013_AFN11_Fn102_AT_RTMS( pBuf );
+                        DL2013_AFN11_Fn102_AT_RTRS( pBuf );
                         return;
                     }
                     else if( ( memcmp( pBuf + 5, "ST?\r", 4 ) == 0 ) ) // 查询路由运行状态
@@ -2709,7 +2703,7 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
                         DL2013_AFN10_Fn4_AT_RTST( pBuf );
                         return;
                     }
-                    else if( ( memcmp( pBuf + 5, "MN=", 3 ) == 0 ) ) // 启动维护
+                    else if( ( memcmp( pBuf + 5, "MN=", 3 ) == 0 ) ) // 抄表
                     {
                         DL2013_AFN03_Fn1_F101_AT_RTMN( pBuf );
                         return;
