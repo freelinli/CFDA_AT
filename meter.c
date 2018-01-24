@@ -244,7 +244,7 @@ INT8U run_Meter()
 		}
         // Õý³£³­±í
         else if(nMeterUse.fUseYL==FALSE0 && ( nMeterUse.i1Event == RF_ASK_METER_DATA
-            || nMeterUse.i1Event == RF_ASK_DLMS_DATA || nMeterUse.i1Event==RF_ASK_CALL))
+            || nMeterUse.i1Event == RF_ASK_DLMS_DATA  || nMeterUse.i1Event == RF_ASK_TTD_DATA|| nMeterUse.i1Event==RF_ASK_CALL))
         {
             INT16U j;
             INT8U  pathNo, tFlagUp, tFlagAgain=FALSE0;

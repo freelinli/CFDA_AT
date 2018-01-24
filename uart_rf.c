@@ -35,7 +35,6 @@ void TSST_AT( INT8U* buf )
     {
         if( buf[33] == 0x31  )
         {
-          
             drv_UartSend( buf + 35, buf[34] );
  
         }

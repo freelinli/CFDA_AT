@@ -1263,14 +1263,18 @@ void DL2013_AFN10_Fn2_AT_NINFO( INT8U* pBuf )
             if( dauF_Good( i ) == TRUE1 )                                                        //  830台体接口:  0~6表中继层次，0x0f表不在网
             {
                 relay_level = mDAU[i].b4DLayerSon - 1;
+             
             }
             else
             {
                 relay_level = 9;
             }
+    
+            
             pBuf[pBuf_index ++] = '0' + relay_level % 10 ;
             pBuf[pBuf_index ++] = ',';
-            pBuf[pBuf_index ++] = '0' + ( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
+         
+            pBuf[pBuf_index ++] = '0' ; //( INT8U )( mDAU[i].aDProType[1] );           // 通信协议类型 comm_type
             pBuf[pBuf_index ++] = ',';                                                    // 协议类型:  档案类型
             tN2++;
             if( tN2 >= serial_number_num || tN2 >= 25 )                                                   // 若tN2 达到25或要求查询数量，退出循环
@@ -2377,26 +2381,16 @@ void AT_W3( void ) // 发送透传数据  点对点 數據幀
 */
 void AT_TTD( INT8U* pBuf )
 {
-    INT8U Buf[35] = {0x22,
-                     0x41, 0xcd,
-                     0x0f,
-                     0xff, 0xff, // panid
-                     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // buf[6]
-                     0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
-                     0x3c,
-                     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, //  buf[19]
-                     0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
-                     1, 1, 0, 0x31
-                     // should add other , such as: datalen + data
-                    };
     INT8U dst_addr[6], *temp_buf;
     INT8U i, flag_get_data = 0;
-    INT16U len;
+    INT16U len, tmpDAUNum;
+    
     if( *( pBuf + 19 ) != ',' )
     {
         uart_Answer_ERROR();
         return;
     }
+    
     for( i = 0 ; i < 3; i++ )
     {
         if( pBuf[21 + i] == ',' )
@@ -2422,17 +2416,40 @@ void AT_TTD( INT8U* pBuf )
         return;
     }
     ASCII_2_HEX_AT( pBuf + 7, dst_addr, 6 );
-    mem_cpy( Buf + 6, dst_addr, 6 );
-    mem_cpy( Buf + 19, dst_addr, 6 );
-    temp_buf = ( INT8U* )malloc( len );
-    mem_cpy( temp_buf, pBuf + 22 + i, len );
-    mem_cpy( pBuf, Buf, 0x23 );
-    pBuf[0x23] = len;
-    mem_cpy( pBuf + 0x24, temp_buf, len );
-    pBuf[0] += ( len + 1 );
-    drv_RfSend( pBuf, CH_TYPE_TEST_0 );
-    free( temp_buf );
-    uart_Answer_OK();
+
+    temp_buf = ( INT8U* )malloc( len + 1);
+    temp_buf[0] = len;
+    mem_cpy( temp_buf + 1, pBuf + 22 + i, len );
+ 
+ 
+   
+    
+        //  已有抄表任务
+    if( mCAC.bMeter == TRUE1 )
+    {
+         free( temp_buf );
+        uart_Answer_ERROR(); // 需改动为其他错误码
+        return ;                                                                //  返回主节点忙
+    }
+    //  查找DAU序号
+    tmpDAUNum = cac_CheckDAUNum( dst_addr );
+ 
+    //  节点不在档案
+    if( tmpDAUNum >= MAX_DAU )
+    {
+        // drv_Printf("\n节点不在档案");;
+        uart_Answer_ERROR(); // 需改动为其他错误码  //  返回不在网
+           free( temp_buf );
+        return ;
+    }
+   uart_Answer_OK();
+    
+    // drv_Printf("\n==============================启动抄表=============================");
+ 
+      set_Meter( tmpDAUNum, temp_buf, len + 1, 0, 0, RF_ASK_TTD_DATA);
+       free( temp_buf );
+
+  
 }
 
 
@@ -2749,7 +2766,7 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
                 DL2013_AFNF0_Fn201_AT_TTTH( pBuf );
                 return;
             }
-            else if( ( memcmp( pBuf + 4, "TD=", 3 ) == 0 ) ) // 数据透传到掌机
+            else if( ( memcmp( pBuf + 4, "TD=", 3 ) == 0 ) ) // 
             {
                 AT_TTD( pBuf );
                 return;
