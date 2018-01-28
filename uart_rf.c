@@ -3,11 +3,16 @@
 
 
 
+
+
 void        rf_FCtest_Com( void );                  // FC扩展测试
 void        rf_Handset_Com( void );
 void        rf_YouLiShenQin( void );                // 游离申请
 void        rf_YouLiJiuXu( void );                  // 游离就绪
 void        rf_Report_Com( void );                  // 主动上报处理
+
+
+void        rf_TTD_data( void );                  // 游离就绪
 void        OpenBoxReport( INT8U* pDAU, INT8U* pBuf );
 
 
@@ -22,6 +27,8 @@ INT8U       tempBuf22[256];                                             //
 INT8U       nHearBuf[20][256];
 INT8U       nCallPath[6 * MAX_LAYER];
 
+
+
 // 处理串口数据
 void tsk_uart()
 {
@@ -35,10 +42,42 @@ void TSST_AT( INT8U* buf )
     {
         if( buf[33] == 0x31  )
         {
+            drv_UartSend("\r", 1);
             drv_UartSend( buf + 35, buf[34] );
- 
+            drv_UartSend("\r", 1);
         }
     }
+}
+
+
+void RRPI_AT( INT8U* buf , INT16U len)
+{
+  /*
+    INT8U  tsst_cmp_buf[5] = { 0x32, 0, 0x02, 0x4F, 0x4B }, path_channel, temp_len1;
+    INT16U i;
+    for(i = 0; i < len; i ++)
+    {
+      if( memcmp( tsst_cmp_buf, buf + i, 5 ) == 0 )
+      {
+
+                nMeterUse.fOpen = FALSE0;
+       
+                
+                    mth_WorkYes(tmpDAUNum_RRPI);  
+                       // 使用上次成功路径：sNow指向X(0~12)，sNext指向0  //查看上次使用的路径信息。
+        path_channel     =    sReadSuccessOldPath(tmpDAUNum_RRPI);  // 读取上次成功路径，成功返回序号，失败返回13
+		
+
+    buf[0] = '\r';
+    HEX_2_ASCII_AT( dst_addr_RRPI, buf + 1, 6 );
+    buf[13] = ',';
+
+    mth_ReadmMath_AT( buf + 14, tmpDAUNum_RRPI, path_channel, (INT8U* )&i, &temp_len1 );
+    buf[14 + temp_len1] = '\r';
+    drv_UartSend( buf, 15 + temp_len1 );
+      }
+    }
+*/
 }
 // 处理射频数据
 INT8U tsk_rf()
@@ -84,12 +123,18 @@ INT8U tsk_rf()
         {
             rf_YouLiJiuXu();
             return FALSE0;
+        }else if(mRf.i1Com ==  RF_ANS_TTD_DATA)
+        {
+          rf_TTD_data();
+          return FALSE0;
         }
         return TRUE1;
     }
     else
     {
         TSST_AT( drvUartRf.aRfRxBuf );
+   //     RRPI_AT( drvUartRf.aRfRxBuf , drvUartRf.i2RfRxLen);
+        
     }
     return FALSE0;
 }
@@ -1142,7 +1187,13 @@ void rf_YouLiShenQin()
         }
     }
 }
+void rf_TTD_data()
+{
+  
+            drv_UartSend(mRf.aBuf + 1 , mRf.aBuf[0]  );
+      
 
+}
 // 游离就绪
 void rf_YouLiJiuXu()
 {

@@ -26,27 +26,12 @@ INT8U           meter_board_divisor         (INT16U pCapacity, INT8U pTime);
 
 INT8U           meterBuf[LEN_USER];
 
-// 抄表参数结构        	
-typedef struct{      
 
-    INT8U			fOpen			            : 1	;										    // 抄表总开关
-    INT8U			fHand			            : 1	;											// 掌机标志
-    INT8U			fUseYL			            : 1	;											// 游离标志
-    INT8U           fBoard                      : 1 ;                                            
+gMeterUse nMeterUse;						// 抄表参数结构 
 
-    INT8U			i1Event;																	// 事件
-    INT8U			i1XieYi;																	// 协议
-    INT8U			i1Bo;																		// 波特率
-    INT8U			aDAU[6];																    // DAU地址
-    INT8U			aPath[6*MAX_LAYER*2];										                // 路径
-    INT16U		    i2Len;																	    // 长度
-    INT16U		    i2Num;																	    // DAU序号
-    INT16U          i2Capacity;
-    INT16U		    aNumPath[MAX_LAYER*2];									                    // 序号路径
-    
-    INT8U			*pBuf;																	    // 数据区
-}gMeterUse;
-gMeterUse nMeterUse;						// 抄表参数结构  
+
+INT8U tmpDAUNum_RRPI = 0;
+INT8U dst_addr_RRPI[6];
 
 // 抄表初始化
 void init_Meter()
@@ -244,7 +229,7 @@ INT8U run_Meter()
 		}
         // 正常抄表
         else if(nMeterUse.fUseYL==FALSE0 && ( nMeterUse.i1Event == RF_ASK_METER_DATA
-            || nMeterUse.i1Event == RF_ASK_DLMS_DATA  || nMeterUse.i1Event == RF_ASK_TTD_DATA|| nMeterUse.i1Event==RF_ASK_CALL))
+            || nMeterUse.i1Event == RF_ASK_DLMS_DATA  || nMeterUse.i1Event == RF_ASK_TTD_DATA || nMeterUse.i1Event == RF_ASK_RRPI_DATA||  nMeterUse.i1Event==RF_ASK_CALL))
         {
             INT16U j;
             INT8U  pathNo, tFlagUp, tFlagAgain=FALSE0;
@@ -266,6 +251,8 @@ INT8U run_Meter()
             drv_PrintfDAU(mDAU[nMeterUse.i2Num].aDAddr);
 
             j=30;
+            if(nMeterUse.i1Event == RF_ASK_TTD_DATA)
+                 j = 1;
             while(j>0)
             {
                 // 抄表总时间超时
@@ -292,6 +279,7 @@ INT8U run_Meter()
                     else
                     {
                         drv_Printf("\n抄表总超时时间到");
+                            if(nMeterUse.i1Event !=  RF_ASK_TTD_DATA)
                         uart_Answer_Bad();
                     }
                     break;
@@ -325,6 +313,7 @@ INT8U run_Meter()
                     else
                     {
                         drv_Printf("\n测量频道抄表结束");
+                          if(nMeterUse.i1Event !=  RF_ASK_TTD_DATA)
                         uart_Answer_Bad();
                     }
                     
@@ -358,6 +347,7 @@ INT8U run_Meter()
                 {
                     mDAU[nMeterUse.i2Num].bDMode = METER_PATH;
 
+     
                     if (tFlagUp == FALSE0)
                         mth_WorkYes(nMeterUse.i2Num);
                     else
@@ -367,25 +357,44 @@ INT8U run_Meter()
                     if(nMeterUse.fHand==FALSE0)
                     {
                         // 抄表
-                        if(nMeterUse.i1Event == RF_ASK_METER_DATA || nMeterUse.i1Event == RF_ASK_DLMS_DATA)
+                        if(nMeterUse.i1Event == RF_ASK_METER_DATA || nMeterUse.i1Event == RF_ASK_DLMS_DATA|| nMeterUse.i1Event == RF_ASK_TTD_DATA )
                         {
                             gDtMeter *tMeters=(gDtMeter *)nMeterUse.pBuf;  
                        
 #if 0
                             uart_Back_DAUData(nMeterUse.aDAU,tMeters->aBuf,tMeters->i2Len,RF_ASK_METER_DATA,nMeterUse.i1XieYi);
 #else
-                            drv_UartSend("\r",1);             
-                            NUM_2_ASCII_AT(tMeters->i2Len, temp_buf,&temp_len); // 暂且认为表计不会超过四位数
-                            drv_UartSend(temp_buf,temp_len);
-                            drv_UartSend(",",1);
-                            drv_UartSend(tMeters->aBuf,tMeters->i2Len);
-                            drv_UartSend("\r",1);
+                            if((tMeters->aBuf != NULL)&&(tMeters->i2Len != 0))
+                            {
+                              drv_UartSend("\r",1);             
+                              NUM_2_ASCII_AT(tMeters->i2Len, temp_buf,&temp_len); // 暂且认为表计不会超过四位数
+                              drv_UartSend(temp_buf,temp_len);
+                            
+                              drv_UartSend(",",1);
+                              drv_UartSend(tMeters->aBuf,tMeters->i2Len);
+                              drv_UartSend("\r",1);
+                            }
 #endif
                         }
-                        // 点名
-                        else
+                        // 查询路径信息
+                        else if(nMeterUse.i1Event == RF_ASK_RRPI_DATA)
                         {
-                            ;
+                          
+                              INT8U   path_channel, temp_len1;
+                    
+                              
+                              path_channel    =   sReadSuccessOldPath(tmpDAUNum_RRPI);  // 读取上次成功路径，成功返回序号，失败返回13
+                              
+
+                                meterBuf[0] = '\r';
+                                HEX_2_ASCII_AT( dst_addr_RRPI, meterBuf + 1, 6 );  
+                                meterBuf[13] = ',';
+                                mth_ReadmMath_AT( meterBuf + 14, tmpDAUNum_RRPI, path_channel, (INT8U* )&path_channel, &temp_len1 );
+                                meterBuf[14 + temp_len1] = '\r';
+                                drv_UartSend( meterBuf, 15 + temp_len1 );
+                 
+                              
+                           
                         }
                     }
                     // 掌机抄表
@@ -454,6 +463,7 @@ INT8U run_Meter()
 
                     break;
                 }
+              
 
                 j--;
             }
@@ -472,6 +482,7 @@ INT8U run_Meter()
                 // 单次抄表
                 if(meter_one_check(FALSE0, FALSE0)==TRUE1)
                 {
+                     mth_WorkYes(nMeterUse.i2Num);
                     // 串口抄表
                     if(nMeterUse.fHand==FALSE0)
                     {
@@ -495,6 +506,7 @@ INT8U run_Meter()
             }
             if(flag1 == FALSE0)
             {
+                if(nMeterUse.i1Event !=  RF_ASK_TTD_DATA)
                 uart_Answer_Bad();
             }
         }
@@ -649,6 +661,9 @@ INT8U meter_one_check(INT8U pFUp, INT8U again)
         //  4. 接收流程
         //==========================================
         // 是否超时
+        
+   if(nMeterUse.i1Event != RF_ASK_TTD_DATA)
+   {
 
 #ifdef    _LD_USE_TEST
         tFlag = TRUE1;
@@ -714,6 +729,18 @@ INT8U meter_one_check(INT8U pFUp, INT8U again)
                         return TRUE1;
                     }
                 }
+                     if( mRf.i1Com == RF_ASK_RRPI_DATA )                              // 是路径查询
+                {
+                  
+     
+                    FlgReceiveData = TRUE1;
+                    drv_Printf("\n路径查询成功");
+          
+                    
+                        return TRUE1;
+                    
+                }
+                
                 
                 // 回抄表
                 if(Cb_CmpArry_stat(mRf.aDAU,nMeterUse.aDAU,6)==TRUE1		    // 是期待DAU
@@ -740,6 +767,8 @@ INT8U meter_one_check(INT8U pFUp, INT8U again)
                 }
             }
         }
+        
+ 
         // 故障节点处理
 #ifdef MODE_REPORT
         if(reportDAU[6]==TRUE1)
@@ -763,6 +792,8 @@ INT8U meter_one_check(INT8U pFUp, INT8U again)
             }
         }
 #endif
+        
+          }
         tNowSend++;
     }
 

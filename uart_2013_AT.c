@@ -9,6 +9,10 @@ extern INT16U TskOptimizeLimitTime;
 extern INT8U        gFlgUrtCmpFile;                         // 档案同步流程标志
 extern INT8U        FlagNew;                                                    // 上报标志位，用于激活主动注册
 
+
+extern INT8U tmpDAUNum_RRPI;
+extern INT8U dst_addr_RRPI[6];
+
 INT16U      xb_Capacity( INT16U pN );
 INT8U   AT_Save_Last_Cmd_Buf[LEN_RF], AT_Save_Last_Cmd_Buf_Len = 0;
 INT8U   AT_IPR_info = 2; // 波特率数值
@@ -436,7 +440,7 @@ void DL2013_AFN03_Fn1_F101_AT_RTMN( INT8U* pBuf )
     {
         //drv_Printf("\n已有抄表任务");
         free( Get645_data );
-        uart_Answer_ERROR(); // 需改动为其他错误码
+         uart_Answer_ERRORn(ERROR_TRANS_BUSY);  // 需改动为其他错误码
         return ;                                                                //  返回主节点忙
     }
     //  查找DAU序号
@@ -566,7 +570,7 @@ void DL2013_AFN03_Fn8_AT_HNCP( INT8U* pBuf )
 {
     INT8U temp_len1 = 0;
     pBuf[0] = '\r';
-    NUM_2_ASCII_AT( mCAC.i1BigCHXX, pBuf + 1,  &temp_len1 );
+    NUM_2_ASCII_AT( mCAC.i1BigCH, pBuf + 1,  &temp_len1 );
     pBuf[temp_len1 + 1] = ',';
     pBuf[temp_len1 + 2] = mCAC.i1RFPower + '0';
     pBuf[temp_len1 + 3] = '\r';
@@ -1383,7 +1387,7 @@ void DL2013_AFN10_Fn5_AT_NLST( INT8U* pBuf )
         uart_Answer_ERROR();
         return;
     }
-    if( serial_number_num > 25 )
+    if( serial_number_num > 15 )
     {
         uart_Answer_ERRORn( ERROR_10H_F5_AT_NODE_OVER_FLOW );
         return;
@@ -1416,7 +1420,7 @@ void DL2013_AFN10_Fn5_AT_NLST( INT8U* pBuf )
             pBuf_index += 12;
             pBuf[pBuf_index ++] =  ',';
             tN2++;
-            if( tN2 >= serial_number_num || tN2 >= 25 )                                                       //  若tN2 达到25或要求查询数量，退出循环
+            if( tN2 >= serial_number_num || tN2 >= 15 )                                                       //  若tN2 达到25或要求查询数量，退出循环
             {
                 break;
             }
@@ -2141,55 +2145,52 @@ void DL2013_AFNF0_Fn102_AT_CACRC( INT8U* pBuf )
 
 /**
 * @brief           读取路径信息
-                   0:读取0~4条路径
-                   1：读取5~9条路径信息
-                   2: 读取10~12条路径信息
-                   3：读取当前使用路径信息
 * @param[in]  pBuf 接收和发送数据缓存数据指针
 * @author       李晋南
 * @date       2018/01/14
 */
+ 
 void DL2013_AFNF0_Fn106_AT_RRPI( INT8U* pBuf )
 {
     INT16U i;
-    INT16U pNum = 0;
+    INT16U tmpDAUNum = 0,pNum;
     INT8U tUseNum;
-    INT8U n;
-    INT8U dst_addr[6], path_channel, temp_len1, temp_len2;
-    ASCII_2_HEX_AT( pBuf + 8, dst_addr, 6 );
-    ASCII_2_NUM_U8_AT( pBuf + 21, &path_channel,   1 );
-    if( path_channel > 6 )
-    {
-        uart_Answer_ERROR();
-        return;
-    }
+    INT8U n, temp_buf[3] ={2,'O','K'};
+ 
+    ASCII_2_HEX_AT( pBuf + 8, dst_addr_RRPI, 6 );
+
     for( i = 0; i < MAX_DAU; i++ )
     {
-        if( memcmp( mDAU[i].aDAddr, dst_addr, 6 ) == 0 )
+        if( memcmp( mDAU[i].aDAddr, dst_addr_RRPI, 6 ) == 0 )
         {
             pNum = i;    // 定位节点序号
             break;
         }
     }
-    // 待续 01 14
-    // 地址，{，，，{地址六组}}*2
-    pBuf[0] = '\r';
-    HEX_2_ASCII_AT( dst_addr, pBuf + 1, 6 );
-    pBuf[13] = ',';
-    if( path_channel != 6 )
+          //  已有抄表任务
+    if( mCAC.bMeter == TRUE1 )
     {
-        mth_ReadmMath_AT( pBuf + 14, pNum, 2 * path_channel, &tUseNum, &temp_len1 );
-        pBuf[14 + temp_len1] = ',';
-        mth_ReadmMath_AT( pBuf + temp_len1 + 15, pNum, 2 * path_channel + 1, &tUseNum, &temp_len2 );
-        pBuf[15 + temp_len1 + temp_len2] = '\r';
-        drv_UartSend( pBuf, 16 + temp_len1  + temp_len2 );
+           uart_Answer_ERRORn(ERROR_TRANS_BUSY); // 需改动为其他错误码
+        return ;                                                                //  返回主节点忙
     }
-    else
+    //  查找DAU序号
+    tmpDAUNum = cac_CheckDAUNum( dst_addr_RRPI );
+ 
+    //  节点不在档案
+    if( tmpDAUNum >= MAX_DAU )
     {
-        mth_ReadmMath_AT( pBuf + 14, pNum, 12, &tUseNum, &temp_len1 );
-        pBuf[14 + temp_len1] = '\r';
-        drv_UartSend( pBuf, 15 + temp_len1 );
+        // drv_Printf("\n节点不在档案");;
+        uart_Answer_ERROR(); // 需改动为其他错误码  //  返回不在网
+        return ;
     }
+    
+    // drv_Printf("\n==============================启动抄表=============================");
+ 
+      set_Meter( tmpDAUNum, temp_buf, temp_buf[0] + 1, 0, 0, RF_ASK_RRPI_DATA); // TTD传输过程，不应该有error 11 出现
+      
+      
+    tmpDAUNum_RRPI = tmpDAUNum;
+   
 }
 
 
@@ -2428,7 +2429,7 @@ void AT_TTD( INT8U* pBuf )
     if( mCAC.bMeter == TRUE1 )
     {
          free( temp_buf );
-        uart_Answer_ERROR(); // 需改动为其他错误码
+        uart_Answer_ERRORn(ERROR_TRANS_BUSY); // 需改动为其他错误码
         return ;                                                                //  返回主节点忙
     }
     //  查找DAU序号
@@ -2446,10 +2447,10 @@ void AT_TTD( INT8U* pBuf )
     
     // drv_Printf("\n==============================启动抄表=============================");
  
-      set_Meter( tmpDAUNum, temp_buf, len + 1, 0, 0, RF_ASK_TTD_DATA);
+      set_Meter( tmpDAUNum, temp_buf, len + 1, 0, 0, RF_ASK_TTD_DATA); // TTD传输过程，不应该有error 11 出现
+      
        free( temp_buf );
 
-  
 }
 
 
@@ -2677,7 +2678,7 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
                 break;
                 case 'R':
                 {
-                    if( ( memcmp( pBuf + 5, "PI=", 3 ) == 0 ) && ( pBuf[20] == ',' ) && ( pBuf[22] == '\r' ) ) // 查询内部版本号
+                    if( ( memcmp( pBuf + 5, "PI=", 3 ) == 0 ) && ( pBuf[20] == '\r' ) ) //
                     {
                         DL2013_AFNF0_Fn106_AT_RRPI( pBuf );
                         return;
