@@ -1162,6 +1162,37 @@ void rf_BroadcastTime( INT8U* pBuf, INT8U pLen )
     }
 }
 
+// 广播透传
+void rf_BroadcastData( INT8U* pBuf, INT8U pLen )
+{
+    gDtMeter* tM = ( gDtMeter* )( mRf.aBuf );
+    INT8U i;
+    mRf.i1Com = RF_BROADCAST_DATA;
+    mRf.aCAC[0] = mCAC.aCAddr[0];
+    mRf.aCAC[1] = mCAC.aCAddr[1];
+    mRf.aCAC[2] = mCAC.aCAddr[2];
+    mRf.aCAC[3] = mCAC.aCAddr[3];
+    mRf.aCAC[4] = mCAC.aCAddr[4];
+    mRf.aCAC[5] = mCAC.aCAddr[5];
+    tM->i2Len = pLen;
+    tM->i1Baud = ( INT8U )mCAC.i2BrdNum;
+    for( i = 0; i < pLen; i++ )
+    {
+        tM->aBuf[i] = pBuf[i];
+    }
+    // 发送返回命令
+    if( dl_RfStruct( mRf.BufTx, &mRf ) == TRUE1 )
+    {
+        //drv_RfSend(mRf.BufTx,CH_TYPE_TEST);
+        drv_RfSend( mRf.BufTx, CH_TYPE_WORK );
+        drv_Printf( "\n========================校时命令已发送===================" );
+    }
+    else
+    {
+        drv_Printf( "\n================ =====校时命令发送失败===================" );
+    }
+}
+
 // 游离申请响应
 void rf_YouLiShenQin()
 {

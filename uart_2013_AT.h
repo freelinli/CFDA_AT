@@ -62,6 +62,7 @@ extern void rf_BroadcastTime( INT8U* pBuf, INT8U pLen );
 #define ERROR_10H_F101_AT_NO_THIS_NODE 0x60
 #define ERROR_TRANS_BUSY 0x61
 
+#define ERROR_AT_BC_OVER_FLOW  0x57
 
 typedef struct
 {

@@ -768,7 +768,7 @@ void DL2013_AFN03_Fn101_AT_RTC( INT8U* pBuf )
 void DL2013_AFN04_Fn1_AT_TSST( INT8U* pBuf )
 {
     INT16U timeout = 0;
-    INT8U  i;
+    INT8U  i,get_all_data = 0;
     
     
     INT8U Buf[35] = {0x22,
@@ -800,8 +800,15 @@ void DL2013_AFN04_Fn1_AT_TSST( INT8U* pBuf )
                 uart_Answer_ERRORn( ERROR_04H_F1_AT_TIMEOUT_OVER_FLOW );
                 return;
             }
+            get_all_data = 1;
             break;
         }
+    }
+    
+    if(get_all_data == 0)
+    {
+        uart_Answer_Invalid_Command();
+        return;
     }
     
     mem_cpy( Buf + 12, mCAC.aCAddr, 6 );
@@ -899,6 +906,59 @@ void DL2013_AFN05_Fn2_AT_NEREP( INT8U* pBuf )
         mCAC.bReport = FALSE0;    //  禁止上报
     }
     uart_Answer_OK();                                                                                       // 返回确认
+}
+
+
+
+/**
+* @brief         广播透传
+* @param[in]  pBuf 接收和发送数据缓存数据指针
+* @author       李晋南
+* @date       2018/02/04  
+*/
+
+void AT_BC( INT8U* pBuf )
+{
+    gDtMeter* tM = ( gDtMeter* )( mRf.aBuf );
+    INT8U get_all_data;
+    INT8U i;
+    INT16U data_len;
+    
+     for( i = 0 ; i < 5; i++ )
+    {
+        if( pBuf[7 + i] == ',' )
+        {
+            if( i > 2 )
+            {
+                uart_Answer_ERRORn( ERROR_AT_BC_OVER_FLOW );
+                return;
+            }
+            ASCII_2_NUM_AT( &( pBuf[6] ), ( INT32U* )&data_len, i + 1 );
+            if( data_len > 255 )
+            {
+                uart_Answer_ERRORn( ERROR_AT_BC_OVER_FLOW );
+                return;
+            }
+            if(pBuf[data_len + i + 8] == '\r')
+            get_all_data = 1;
+            break;
+        }
+    }
+    
+        if(get_all_data == 0)
+    {
+        uart_Answer_Invalid_Command();
+        return;
+    }
+    
+  
+    tM->i1Baud = ( INT8U )( mCAC.i2BrdNum++ );
+    rf_BroadcastData( &( pBuf[i + 8] ), data_len );                                 //  广播校时
+    drv_SetTimeMeter( ( INT16U )( xb_Capacity( mCAC.i2DownDAU ) ) );             //  动态规模
+    mCAC.bMeter = TRUE1;
+    mCAC.bBroad = TRUE1;
+
+    uart_Answer_OK();// 返回确认
 }
 
 /**
@@ -1560,7 +1620,7 @@ void DL2013_AFN10_Fn6_AT_AREG( INT8U* pBuf ) // 0108已验证，待实际测试方法测试
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN10_Fn100_AT_SSSL( INT8U* pBuf )
+void DL2013_AFN10_Fn100_AT_SSCL( INT8U* pBuf )
 {
     INT8U len  = 0;
     pBuf[0] = '\r';
@@ -1787,7 +1847,7 @@ void DL2013_AFN11_Fn2_NDEL( INT8U* pBuf )
 * @author       李晋南
 * @date       2018/01/08
 */
-void DL2013_AFN11_Fn100_AT_SSSL( INT8U* pBuf )
+void DL2013_AFN11_Fn100_AT_SSCL( INT8U* pBuf )
 {
     INT16U i, scale = 0;
     for( i = 0 ; i < 3; i++ )
@@ -2499,6 +2559,11 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
                 DL2013_AFN03_Fn9_AT_BRDDT( pBuf );
                 return;
             }
+            if( memcmp( pBuf + 4, "C=", 2) == 0 )
+            {
+                AT_BC( pBuf ); // 广播透传 20180204  add
+                return;
+            }
         }
         break;
         case 'C':
@@ -2735,12 +2800,12 @@ void DL2013_AT_function( INT8U* pBuf, INT16U pLen )
         {
             if( memcmp( pBuf + 4, "SCL?\r", 5 ) == 0 ) //查询网络规模
             {
-                DL2013_AFN10_Fn100_AT_SSSL( pBuf );
+                DL2013_AFN10_Fn100_AT_SSCL( pBuf );
                 return;
             }
             else if( ( memcmp( pBuf + 4, "SCL=", 4 ) == 0 ) )
             {
-                DL2013_AFN11_Fn100_AT_SSSL( pBuf );
+                DL2013_AFN11_Fn100_AT_SSCL( pBuf );
                 return;
             }
             else if( ( memcmp( pBuf + 4, "CCR?\r", 5 ) == 0 ) ) // 查看状态字和通信速率
