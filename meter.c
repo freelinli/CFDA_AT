@@ -26,6 +26,8 @@ INT8U           meter_board_divisor         (INT16U pCapacity, INT8U pTime);
 
 INT8U           meterBuf[LEN_USER];
 
+extern INT8U   flag_at_meter;
+
 
 gMeterUse nMeterUse;						// 抄表参数结构 
 
@@ -361,20 +363,27 @@ INT8U run_Meter()
                         {
                             gDtMeter *tMeters=(gDtMeter *)nMeterUse.pBuf;  
                        
-#if 0
-                            uart_Back_DAUData(nMeterUse.aDAU,tMeters->aBuf,tMeters->i2Len,RF_ASK_METER_DATA,nMeterUse.i1XieYi);
-#else
-                            if((tMeters->aBuf != NULL)&&(tMeters->i2Len != 0))
+                            if(flag_at_meter == 1)
                             {
-                              drv_UartSend("\r",1);             
-                              NUM_2_ASCII_AT(tMeters->i2Len, temp_buf,&temp_len); // 暂且认为表计不会超过四位数
-                              drv_UartSend(temp_buf,temp_len);
-                            
-                              drv_UartSend(",",1);
-                              drv_UartSend(tMeters->aBuf,tMeters->i2Len);
-                              drv_UartSend("\r",1);
+                              
+                                   if((tMeters->aBuf != NULL)&&(tMeters->i2Len != 0))
+                                  {
+                                    drv_UartSend("\r",1);             
+                                    NUM_2_ASCII_AT(tMeters->i2Len, temp_buf,&temp_len); // 暂且认为表计不会超过四位数
+                                    drv_UartSend(temp_buf,temp_len);
+                                  
+                                    drv_UartSend(",",1);
+                                    drv_UartSend(tMeters->aBuf,tMeters->i2Len);
+                                    drv_UartSend("\r",1);
+                                    
+                                  }         
+                          
+                            }else{
+                              
+                                  uart_Back_DAUData(nMeterUse.aDAU,tMeters->aBuf,tMeters->i2Len,RF_ASK_METER_DATA,nMeterUse.i1XieYi);
+                       
                             }
-#endif
+
                         }
                         // 查询路径信息
                         else if(nMeterUse.i1Event == RF_ASK_RRPI_DATA)
@@ -387,7 +396,10 @@ INT8U run_Meter()
                               
 
                                 meterBuf[0] = '\r';
-                                HEX_2_ASCII_AT( dst_addr_RRPI, meterBuf + 1, 6 );  
+                                    Switch_Addr_6_LSB_MSB(dst_addr_RRPI);
+                                HEX_2_ASCII_AT( dst_addr_RRPI, meterBuf + 1, 6 ); 
+                              
+                                
                                 meterBuf[13] = ',';
                                 mth_ReadmMath_AT( meterBuf + 14, tmpDAUNum_RRPI, path_channel, (INT8U* )&path_channel, &temp_len1 );
                                 meterBuf[14 + temp_len1] = '\r';
@@ -475,7 +487,7 @@ INT8U run_Meter()
             INT8U j;
             INT8U flag1 = FALSE0;                                                                               //  抄表成功标志
 
-            j=2;
+            j=2; 
             while(j>0)
             {
                 j--;
@@ -684,11 +696,13 @@ INT8U meter_one_check(INT8U pFUp, INT8U again)
                 tsk_uart();
 
             // 射频有数据
+      
             if(drvUartRf.fRfOK==TRUE1										// 射频收到数据
                 &&tsk_rf()==TRUE1											// 数据解析有效
                 &&Cb_CmpArry_stat(mRf.aTxID,nMeterUse.aPath,6)              // 为第一层节点
                 &&Cb_CmpArry_stat(mRf.aDAU,nMeterUse.aDAU,6)                // 抄目标节点DAU
                 &&mRf.i1Com==nMeterUse.i1Event)                             // 为抄表帧
+      
             {
                 tFlag=TRUE1;
                 break;

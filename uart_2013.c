@@ -26,6 +26,8 @@ INT8U FlagNew = FALSE0;                                                   //  主
 INT8U FlagNewNotCollect = TRUE1;                                  //  HT主动注册暂不支持采集器模式
 INT16U gDAUNum;
 
+extern INT8U   flag_at_meter;
+
 // 通信延时相关参数
 INT8U YanShiCanShu(INT8U* xAddr);
 INT16U cac_GetBroadDelayTime(INT16U t);
@@ -1996,6 +1998,7 @@ void DL2013_AFN13_Fn1(INT8U *pDAU,INT8U *pBuf,INT16U pLen)
     else                                                                                                                     
     {
         drv_Printf("\n==============================启动抄表=============================");
+        flag_at_meter = 0;
         set_Meter(tmpDAUNum,&(pBuf[tDataN+1]),pBuf[tDataN],mDAU[tmpDAUNum].aDProType[0],0,RF_ASK_METER_DATA);
     }  
 }
@@ -2008,6 +2011,7 @@ void DL2013_AFN13_Fn101(INT8U *pDAU,INT8U *pBuf,INT16U pLen)
     
     backMeter=3;
 
+  
     //  数据长度异常
     tDataN=pBuf[2]*6+3;                                                                                   //  计算报文长度L字段下标
     if( (pLen > LEN_USER)                                                                                   //  声明长度超过定义最大值
@@ -2081,7 +2085,9 @@ void DL2013_AFN13_Fn101(INT8U *pDAU,INT8U *pBuf,INT16U pLen)
     else                                                                                                                     
     {
         drv_Printf("\n==============================启动抄表=============================");
+          flag_at_meter = 0;
         set_Meter(tmpDAUNum,&(pBuf[tDataN+1]),pBuf[tDataN],mDAU[tmpDAUNum].aDProType[0],0,RF_ASK_DLMS_DATA);
+        
     }
 }
 
