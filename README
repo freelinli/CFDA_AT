@@ -1,6 +1,13 @@
 # CFDA_AT
 2019/12/23
 
+whiling using git commit --amend in the git, then push will have some 
+warnning, should use:
+
+git push --force-with-lease origin master
+
+2019/12/23
+
 this is master 
 
 2019/12/23
