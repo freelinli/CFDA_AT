@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-void main()
+void main(int argc, char **argv)
 {
 	printf("hello master\r\n");
 	printf("branch 2\r\n");
