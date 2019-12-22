@@ -8,4 +8,5 @@ void main()
 	printf("branch merge\r\n");
 	printf("branch merge with --no-ff (not use the fast forward)\r\n");
 	printf("add master after stash\r\n");
+	printf("use the stash\r\n");
 }
