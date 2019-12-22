@@ -7,4 +7,5 @@ void main()
 	printf("branch amend\r\n");
 	printf("branch merge\r\n");
 	printf("branch merge with --no-ff (not use the fast forward)\r\n");
+	printf("add master after stash\r\n");
 }
